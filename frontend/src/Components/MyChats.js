@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Text, useToast } from '@chakra-ui/react';
+import { Box, Button, Spinner, Stack, Text, useToast } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import axios from 'axios';
@@ -9,12 +9,14 @@ import GroupChatModal from './miscellaneous/GroupChatModal';
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
+  const [isLoading, setIsLoading] = useState(false);
 
   const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
 
   const toast = useToast();
 
   const fetchChats = async () => {
+    setIsLoading(true);
     try {
       const config = {
         headers: {
@@ -24,6 +26,7 @@ const MyChats = ({ fetchAgain }) => {
 
       const { data } = await axios.get('/api/chat', config);
       setChats(data);
+      setIsLoading(false);
     } catch (error) {
       toast({
         title: 'Error Occured!',
@@ -33,6 +36,7 @@ const MyChats = ({ fetchAgain }) => {
         isClosable: true,
         position: 'bottom-left',
       });
+      setIsLoading(false);
     }
   };
 
@@ -83,7 +87,14 @@ const MyChats = ({ fetchAgain }) => {
         borderRadius="lg"
         overflowY="hidden"
       >
-        {chats ? (
+        {isLoading ? 
+          <Spinner
+            size="xl"
+            width={20}
+            height={20}
+            alignSelf="center"
+            margin="auto"
+          /> : (chats ? (
           <Stack overflowY={'scroll'}>
             {chats.map(chat => (
               <Box
@@ -106,7 +117,7 @@ const MyChats = ({ fetchAgain }) => {
           </Stack>
         ) : (
           <ChatLoading />
-        )}
+        ))}
       </Box>
     </Box>
   );

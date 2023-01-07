@@ -29,7 +29,7 @@ const GroupChatModal = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const { user, chats, setChats } = ChatState();
+  const { user, chats, setChats, setSelectedChat } = ChatState();
 
   const handleGroup = userToAdd => {
     if (selectedUsers.includes(userToAdd)) {
@@ -104,6 +104,7 @@ const GroupChatModal = ({ children }) => {
         config
       );
       setChats([data, ...chats]);
+      setSelectedChat(data);
       onClose();
       toast({
         title: 'New Group Chat Created!',

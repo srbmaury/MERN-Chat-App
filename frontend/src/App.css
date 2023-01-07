@@ -8,6 +8,10 @@
   background-size: cover;
 }
 
+.messages{
+  overflow-y: scroll;
+}
+
 ::-webkit-scrollbar {
   width: 0px;
 }
