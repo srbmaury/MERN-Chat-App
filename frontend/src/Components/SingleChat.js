@@ -74,7 +74,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
-  useEffect(() => {
+  useEffect(() => { 
     socket = io(ENDPOINT);
     socket.emit("setup", user);
     socket.on('connected', () => setSocketConnected(true));
@@ -254,5 +254,3 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 };
 
 export default SingleChat;
-
-// 33:00

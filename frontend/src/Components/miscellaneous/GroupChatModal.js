@@ -20,16 +20,27 @@ import { ChatState } from '../../Context/ChatProvider';
 import UserBadgeItem from '../UserAvatar/UserBadgeItem';
 import UserListItem from '../UserAvatar/UserListItem';
 
-const GroupChatModal = ({ children }) => {
+import io from 'socket.io-client';
+
+const ENDPOINT = "http://localhost:5000";
+var socket;
+
+const GroupChatModal = ({ children, fetchAgain, setFetchAgain }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [groupChatName, setGroupChatName] = useState();
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const toast = useToast();
 
   const { user, chats, setChats, setSelectedChat } = ChatState();
+
+  useEffect(() => {
+    socket = io(ENDPOINT);
+    socket.emit("setup", user);
+  }, []);
 
   const handleGroup = userToAdd => {
     if (selectedUsers.includes(userToAdd)) {
@@ -105,7 +116,7 @@ const GroupChatModal = ({ children }) => {
       );
       setChats([data, ...chats]);
       setSelectedChat(data);
-      onClose();
+      socket.emit('new group', data);
       toast({
         title: 'New Group Chat Created!',
         status: 'success',
@@ -128,6 +139,13 @@ const GroupChatModal = ({ children }) => {
   useEffect(() => {
     handleSearch();
   }, [search]);
+
+  useEffect(() => {
+    socket.on('group formed', (newGroupFormed) => {
+      setChats([newGroupFormed, ...chats]);
+      onClose();
+    });
+  });
 
   return (
     <>

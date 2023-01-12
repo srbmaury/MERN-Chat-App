@@ -1,6 +1,5 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const { chats } = require("./data/data");
 const connectDB = require("./config/db");
 const userRoutes = require('./Routes/userRoutes');
 const chatRoutes = require('./Routes/chatRoutes');
@@ -54,12 +53,21 @@ io.on("connection", (socket) => {
   socket.on('new message', (newMessageReceived) => {
     var chat = newMessageReceived.chat;
 
-    if (!chat.users) return console.log('cht.users not defined');
+    if (!chat.users) return console.log('chat.users not defined');
 
     chat.users.forEach(user => {
       if (user._id === newMessageReceived.sender._id) return;
 
       socket.in(user._id).emit('message received', newMessageReceived);
+    });
+  });
+
+  socket.on('new group', (newGroupFormed) => {
+    var chat = newGroupFormed;
+    if (!chat.users) return console.log('chat.users not defined');
+
+    chat.users.forEach(user => {
+      socket.in(user._id).emit('group formed', newGroupFormed);
     });
   });
 

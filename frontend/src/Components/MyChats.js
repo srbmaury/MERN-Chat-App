@@ -6,6 +6,7 @@ import { AddIcon } from '@chakra-ui/icons';
 import ChatLoading from './ChatLoading';
 import { getSender } from '../config/ChatLogics';
 import GroupChatModal from './miscellaneous/GroupChatModal';
+import LatestMessage from './LatestMessage';
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
@@ -111,6 +112,9 @@ const MyChats = ({ fetchAgain }) => {
                   {!chat.isGroupChat
                     ? getSender(loggedUser, chat.users, chat)
                     : chat.chatName}
+                </Text>
+                <Text>
+                  <LatestMessage chat={chat} />
                 </Text>
               </Box>
             ))}
