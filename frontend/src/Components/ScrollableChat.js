@@ -1,11 +1,66 @@
-import { Avatar, Tooltip } from '@chakra-ui/react'
-import React from 'react'
+import { Avatar, Tooltip, useToast } from '@chakra-ui/react'
+import { DeleteIcon } from '@chakra-ui/icons'
+import React, { useEffect } from 'react'
 import ScrollableFeed from 'react-scrollable-feed'
 import { formatDate, isFirstMessageofDay, isLastMessage, isSameSender, isSameSenderMargin } from '../config/ChatLogics'
 import { ChatState } from '../Context/ChatProvider'
+import axios from 'axios'
+import io from 'socket.io-client';
 
-const ScrollableChat = ({ messages }) => {
+const ENDPOINT = "http://localhost:5000";
+var socket;
+
+const ScrollableChat = ({ messages, setMessages }) => {
     const { user, selectedChat } = ChatState();
+
+    const toast = useToast();
+
+    useEffect(() => {
+        socket = io(ENDPOINT);
+        socket.emit("setup", user);
+    }, []);
+
+    const displayDeleteIcon = (id) => {
+        id = 'delete' + id;
+        const icon = document.getElementById(id);
+        icon.style.display === 'block' ?
+            icon.style.display = 'none' :
+            icon.style.display = 'block';
+    };
+
+    const deleteMessage = async (message) => {
+        const messageId = message._id;
+        try {
+            const config = {
+                headers: {
+                    'Content-type': 'application/json',
+                    Authorization: `Bearer ${user.token}`,
+                },
+            };
+            const { data } = await axios.delete(`/api/message/${messageId}`, config);
+            const chat = data.chat;
+            socket.emit('deleted message', chat, message);
+            setMessages(messages.filter(m => m._id !== messageId));
+        } catch (error) {
+            toast({
+                title: 'Error Occured!',
+                description: 'Failed to delete the Message',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+                position: 'bottom',
+            });
+        }
+    }
+
+    useEffect(() => {
+        socket.on('new latest message', (particularChat, message) => {
+            if(user._id !== message.sender._id && selectedChat._id === particularChat._id){
+                setMessages(messages.filter(m => m._id !== message._id));
+            }
+        });
+    });
+
     return (
         <ScrollableFeed>
             <>
@@ -48,6 +103,15 @@ const ScrollableChat = ({ messages }) => {
                                 </div>
                             </div>
                         }
+                        {m.sender._id === user._id &&
+                            <DeleteIcon
+                                color='red'
+                                cursor='pointer'
+                                marginTop={5}
+                                float='right' display={'none'} id={`delete${m._id}`}
+                                onClick={() => deleteMessage(m)}
+                            />
+                        }
                         <div style={{ display: 'flex' }}>
                             {
                                 (isSameSender(messages, m, i, user._id)
@@ -71,16 +135,16 @@ const ScrollableChat = ({ messages }) => {
                             }
                             <span
                                 style={{
-                                    backgroundColor: `${m.sender._id === user._id ? "#BEE3F8" : "#B9F5D0"
-                                        }`,
+                                    backgroundColor: `${m.sender._id === user._id ? "#BEE3F8" : "#B9F5D0"}`,
                                     borderRadius: "20px",
                                     padding: "5px 15px",
                                     maxWidth: "75%",
                                     marginLeft: isSameSenderMargin(messages, m, i, user._id),
                                     marginTop: (isSameSender(messages, m, i) ? 3 : 10),
                                     left: 0,
-                                    display: 'inline-block'
+                                    display: 'inline-block',
                                 }}
+                                onDoubleClick={() => displayDeleteIcon(m._id)}
                             >
                                 {m.content}
                                 <span

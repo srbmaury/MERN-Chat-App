@@ -48,4 +48,38 @@ const allMessages = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { sendMessage, allMessages };
+const deleteMessage = asyncHandler(async (req, res) => {
+    try {
+        const message = await Message.findByIdAndDelete(req.params.messageId);
+        if (!message) {
+            return res.status(404).json({ success: false });
+        }
+        let newLatestMessageId;
+        const messages = await Message.find({ chat: message.chat }).sort({ createdAt: -1 });
+        if(messages.length > 0) {
+            newLatestMessageId = messages[0]._id;
+        }
+        // Update the chat's latestMessage property
+        const chat = await Chat.findOneAndUpdate(
+            { _id: message.chat },
+            { latestMessage: newLatestMessageId },
+            { new: true }
+        ).populate({
+            path: 'users',
+            select: '-password'
+        }).populate({
+            path: 'latestMessage',
+            select: 'sender content',
+            populate: {
+                path: 'sender',
+                select: '-password'
+            }
+        });
+        res.json({ success: true, chat });
+    } catch (err) {
+        res.status(400);
+        throw new Error(err.message);
+    }
+});
+
+module.exports = { sendMessage, allMessages, deleteMessage };

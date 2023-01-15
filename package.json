@@ -21,6 +21,7 @@
     "http-proxy-middleware": "^2.0.6",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^6.8.1",
+    "react-overflow": "^0.2.1",
     "socket.io": "^4.5.4"
   }
 }

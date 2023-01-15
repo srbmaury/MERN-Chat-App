@@ -1,4 +1,4 @@
-import { Box, Button, Spinner, Stack, Text, useToast } from '@chakra-ui/react';
+import { Box, Button, Spinner, Stack, Text, useFocusEffect, useToast } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import axios from 'axios';
@@ -10,14 +10,12 @@ import LatestMessage from './LatestMessage';
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
-  const [isLoading, setIsLoading] = useState(false);
 
   const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
 
   const toast = useToast();
 
   const fetchChats = async () => {
-    setIsLoading(true);
     try {
       const config = {
         headers: {
@@ -27,7 +25,6 @@ const MyChats = ({ fetchAgain }) => {
 
       const { data } = await axios.get('/api/chat', config);
       setChats(data);
-      setIsLoading(false);
     } catch (error) {
       toast({
         title: 'Error Occured!',
@@ -37,13 +34,16 @@ const MyChats = ({ fetchAgain }) => {
         isClosable: true,
         position: 'bottom-left',
       });
-      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    setLoggedUser(JSON.parse(localStorage.getItem('userInfo')));
-    fetchChats();
+    try {
+      setLoggedUser(JSON.parse(localStorage.getItem('userInfo')));
+      fetchChats();
+    } catch (error) {
+      
+    }
   }, [fetchAgain]);
 
   return (
@@ -88,14 +88,7 @@ const MyChats = ({ fetchAgain }) => {
         borderRadius="lg"
         overflowY="hidden"
       >
-        {isLoading ? 
-          <Spinner
-            size="xl"
-            width={20}
-            height={20}
-            alignSelf="center"
-            margin="auto"
-          /> : (chats ? (
+        {chats ? (
           <Stack overflowY={'scroll'}>
             {chats.map(chat => (
               <Box
@@ -114,14 +107,14 @@ const MyChats = ({ fetchAgain }) => {
                     : chat.chatName}
                 </Text>
                 <Text>
-                  <LatestMessage chat={chat} />
+                  <LatestMessage currChat={chat} />
                 </Text>
               </Box>
             ))}
           </Stack>
         ) : (
           <ChatLoading />
-        ))}
+        )}
       </Box>
     </Box>
   );
