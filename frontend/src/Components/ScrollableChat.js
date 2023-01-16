@@ -96,7 +96,7 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                         borderRadius: '7px',
                                         backgroundColor: 'rgb(219, 219, 244)',
                                         textAlign: 'center',
-                                        margin: 'auto'
+                                        margin: '10px auto'
                                     }}
                                 >
                                     {formatDate(m.createdAt.toString())}

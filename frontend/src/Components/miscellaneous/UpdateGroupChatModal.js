@@ -60,7 +60,6 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
         },
         config
       );
-
       setSelectedChat(data);
       setFetchAgain(!fetchAgain);
       setLoading(false);

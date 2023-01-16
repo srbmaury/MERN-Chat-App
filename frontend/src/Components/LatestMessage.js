@@ -6,7 +6,7 @@ const ENDPOINT = "http://localhost:5000";
 var socket;
 
 const LatestMessage = ({ currChat }) => {
-  const { user } = ChatState();
+  const { user, newLatestMessage } = ChatState();
   const [latestMessage, setLatestMessage] = useState(currChat.latestMessage);
 
   useEffect(() => {
@@ -31,12 +31,17 @@ const LatestMessage = ({ currChat }) => {
     });
   });
 
+  useEffect(() => {
+    if(newLatestMessage !== undefined &&  currChat._id === newLatestMessage.chat._id)
+      setLatestMessage(newLatestMessage);
+  }, [newLatestMessage]);
+  
   return (
     <>
-      {latestMessage !== undefined && (
+      {latestMessage !== undefined && latestMessage !== null && (
         (latestMessage.sender._id === user._id ? "You: " : `${latestMessage.sender.name.split(' ')[0]}: `) + 
-        (latestMessage.content.length > 50 ?
-        `${latestMessage.content.slice(0,47)} ...` : latestMessage.content)
+        (latestMessage.content.length > 40 ?
+        `${latestMessage.content.slice(0,37)} ...` : latestMessage.content)
       )}
     </>
   )

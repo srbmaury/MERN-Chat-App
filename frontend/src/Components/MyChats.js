@@ -1,10 +1,10 @@
-import { Box, Button, Spinner, Stack, Text, useFocusEffect, useToast } from '@chakra-ui/react';
+import { Avatar, Box, Button, Spinner, Stack, Text, useFocusEffect, useToast } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import axios from 'axios';
-import { AddIcon } from '@chakra-ui/icons';
+import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import ChatLoading from './ChatLoading';
-import { getSender } from '../config/ChatLogics';
+import { getSender, getSenderFull } from '../config/ChatLogics';
 import GroupChatModal from './miscellaneous/GroupChatModal';
 import LatestMessage from './LatestMessage';
 
@@ -42,7 +42,7 @@ const MyChats = ({ fetchAgain }) => {
       setLoggedUser(JSON.parse(localStorage.getItem('userInfo')));
       fetchChats();
     } catch (error) {
-      
+
     }
   }, [fetchAgain]);
 
@@ -101,14 +101,27 @@ const MyChats = ({ fetchAgain }) => {
                 borderRadius="lg"
                 key={chat._id}
               >
-                <Text>
-                  {!chat.isGroupChat
-                    ? getSender(loggedUser, chat.users, chat)
-                    : chat.chatName}
-                </Text>
-                <Text>
-                  <LatestMessage currChat={chat} />
-                </Text>
+                <Avatar
+                  mr={2}
+                  size="sm"
+                  cursor="pointer"
+                  name={getSender(loggedUser, chat.users, chat)}
+                  src={getSenderFull(loggedUser, chat.users, chat).pic}
+                  marginTop="6px"
+                />
+                <Box
+                  maxWidth="90%"
+                  display="inline-block"
+                >
+                  <Text>
+                    {!chat.isGroupChat
+                      ? getSender(loggedUser, chat.users, chat)
+                      : chat.chatName}
+                  </Text>
+                  <Text>
+                    <LatestMessage currChat={chat} />
+                  </Text>
+                </Box>
               </Box>
             ))}
           </Stack>

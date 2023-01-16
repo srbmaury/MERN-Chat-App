@@ -41,7 +41,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     },
   };
 
-  const { user, selectedChat, setSelectedChat, notification, setNotification } = ChatState();
+  const { user, selectedChat, setSelectedChat, notification, setNotification, setNewLatestMessage } = ChatState();
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -122,6 +122,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         );
 
         socket.emit('new message', data);
+        setNewLatestMessage(data);
         setMessages([...messages, data]);
       } catch (error) {
         toast({
