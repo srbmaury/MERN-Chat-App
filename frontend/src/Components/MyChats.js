@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Spinner, Stack, Text, useFocusEffect, useToast } from '@chakra-ui/react';
+import { Avatar, Box, Button, Stack, Text, useToast } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import axios from 'axios';
@@ -7,13 +7,22 @@ import ChatLoading from './ChatLoading';
 import { getSender, getSenderFull } from '../config/ChatLogics';
 import GroupChatModal from './miscellaneous/GroupChatModal';
 import LatestMessage from './LatestMessage';
+import io from 'socket.io-client';
 
+const ENDPOINT = "http://localhost:5000";
+var socket;
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
+  const [prevSelectedChat, setPrevSelectedChat] = useState();
 
   const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
 
   const toast = useToast();
+
+  useEffect(() => {
+    socket = io(ENDPOINT);
+    socket.emit("setup", user);
+  }, []);
 
   const fetchChats = async () => {
     try {
@@ -45,6 +54,52 @@ const MyChats = ({ fetchAgain }) => {
 
     }
   }, [fetchAgain]);
+
+  const f = (e, chatId) => {
+    e.preventDefault();
+    setPrevSelectedChat(selectedChat);
+    let delete_icon = document.getElementById(`d${chatId}`);
+    (delete_icon.style.display === 'block') ? (delete_icon.style.display = 'none') : (delete_icon.style.display = 'block')
+  }
+
+  const deleteChat = async (chat) => {
+    const chatId = chat._id;
+    try {
+      const response = await fetch(`/api/chat/${chatId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${loggedUser.token}`
+        }
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      setSelectedChat(prevSelectedChat);
+      const updatedChats = chats.filter(c => c._id !== chat._id);
+      if (selectedChat !== undefined && selectedChat !== null && selectedChat._id === chat._id)
+        setSelectedChat();
+      setChats(updatedChats);
+      socket.emit('chat deleted', chat);
+      return data;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    socket.on('remove chat', (chat) => {
+      setSelectedChat(prevSelectedChat);
+      const updatedChats = chats.filter(c => c._id !== chat._id);
+      if (selectedChat !== undefined && selectedChat !== null && selectedChat._id === chat._id)
+        setSelectedChat();
+      setChats(updatedChats);
+    });
+    return () => {
+      socket.off("remove chat");
+    }
+  }, [chats, selectedChat, prevSelectedChat, setSelectedChat, setChats]);
 
   return (
     <Box
@@ -100,6 +155,7 @@ const MyChats = ({ fetchAgain }) => {
                 py={2}
                 borderRadius="lg"
                 key={chat._id}
+                onContextMenu={(e) => f(e, chat._id)}
               >
                 <Avatar
                   mr={2}
@@ -122,6 +178,15 @@ const MyChats = ({ fetchAgain }) => {
                     <LatestMessage currChat={chat} />
                   </Text>
                 </Box>
+                <DeleteIcon
+                  id={`d${chat._id}`}
+                  display="none"
+                  float="right"
+                  marginTop="15px"
+                  boxSize="20px"
+                  color="red"
+                  onClick={() => deleteChat(chat)}
+                />
               </Box>
             ))}
           </Stack>

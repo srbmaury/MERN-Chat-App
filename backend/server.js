@@ -77,6 +77,14 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on('chat deleted', (chat) => {
+    console.log(chat);
+    if (!chat.users) return console.log('chat.users not defined');
+    chat.users.forEach(user => {
+      socket.in(user._id).emit('remove chat', chat);
+    });
+  });
+
   socket.off("setup", () => {
     console.log("USER DISCONNECTED");
     socket.leave(userData._id);
