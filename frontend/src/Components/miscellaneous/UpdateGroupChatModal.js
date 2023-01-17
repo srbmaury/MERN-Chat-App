@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDisclosure } from '@chakra-ui/hooks';
 import {
   Modal,
@@ -144,7 +144,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
     setGroupChatName('');
   };
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!search) {
       return;
     }
@@ -169,11 +169,11 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
         position: 'bottom-left',
       });
     }
-  };
+  },[user, search, toast]);
 
   useEffect(() => {
     handleSearch();
-  }, [search]);
+  }, [search, handleSearch]);
 
   return (
     <>

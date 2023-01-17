@@ -1,5 +1,5 @@
 import { Avatar, Box, Button, Stack, Text, useToast } from '@chakra-ui/react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import axios from 'axios';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
@@ -22,9 +22,9 @@ const MyChats = ({ fetchAgain }) => {
   useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
-  }, []);
+  }, [user]);
 
-  const fetchChats = async () => {
+  const fetchChats = useCallback(async () => {
     try {
       const config = {
         headers: {
@@ -44,7 +44,7 @@ const MyChats = ({ fetchAgain }) => {
         position: 'bottom-left',
       });
     }
-  };
+  },[user, setChats, toast]);
 
   useEffect(() => {
     try {
@@ -53,7 +53,7 @@ const MyChats = ({ fetchAgain }) => {
     } catch (error) {
 
     }
-  }, [fetchAgain]);
+  }, [fetchAgain, fetchChats]);
 
   const f = (e, chatId) => {
     e.preventDefault();

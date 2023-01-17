@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import {
   Box,
@@ -43,7 +43,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const { user, selectedChat, setSelectedChat, notification, setNotification, setNewLatestMessage } = ChatState();
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!selectedChat) return;
     setLoading(true);
     try {
@@ -72,20 +72,20 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         position: 'bottom',
       });
     }
-  };
+  },[user.token,selectedChat, toast]);
 
-  useEffect(() => { 
+  useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
     socket.on('connected', () => setSocketConnected(true));
     socket.on('typing', () => setIsTyping(true));
     socket.on('stop typing', () => setIsTyping(false));
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchMessages();
     selectedChatCompare = selectedChat;
-  }, [selectedChat]);
+  }, [selectedChat, fetchMessages]);
 
   useEffect(() => {
     socket.on('message received', (newMessageReceived) => {

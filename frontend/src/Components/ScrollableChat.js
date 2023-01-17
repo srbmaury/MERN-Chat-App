@@ -18,7 +18,7 @@ const ScrollableChat = ({ messages, setMessages }) => {
     useEffect(() => {
         socket = io(ENDPOINT);
         socket.emit("setup", user);
-    }, []);
+    }, [user]);
 
     const displayDeleteIcon = (id) => {
         id = 'delete' + id;

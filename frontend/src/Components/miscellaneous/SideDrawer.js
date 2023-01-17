@@ -31,7 +31,7 @@ import { getSender } from '../../config/ChatLogics';
 import { Effect } from 'react-notification-badge';
 import NotificationBadge from 'react-notification-badge/lib/components/NotificationBadge';
 
-function SideDrawer() {
+function SideDrawer({ fetchAgain, setFetchAgain }) {
   const [search, setSearch] = useState('');
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -170,7 +170,7 @@ function SideDrawer() {
               />
             </MenuButton>
             <MenuList>
-              <ProfileModal user={user}>
+              <ProfileModal user={user} fetchAgain={fetchAgain} setFetchAgain={setFetchAgain}>
                 <MenuItem>My Profile</MenuItem>
               </ProfileModal>
               <MenuDivider />

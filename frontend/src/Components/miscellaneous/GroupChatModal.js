@@ -15,7 +15,7 @@ import {
   Spinner,
 } from '@chakra-ui/react';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChatState } from '../../Context/ChatProvider';
 import UserBadgeItem from '../UserAvatar/UserBadgeItem';
 import UserListItem from '../UserAvatar/UserListItem';
@@ -40,7 +40,7 @@ const GroupChatModal = ({ children, fetchAgain, setFetchAgain }) => {
   useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
-  }, []);
+  }, [user]);
 
   const handleGroup = userToAdd => {
     if (selectedUsers.includes(userToAdd)) {
@@ -57,7 +57,7 @@ const GroupChatModal = ({ children, fetchAgain, setFetchAgain }) => {
     setSelectedUsers([...selectedUsers, userToAdd]);
   };
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!search) {
       return;
     }
@@ -82,7 +82,7 @@ const GroupChatModal = ({ children, fetchAgain, setFetchAgain }) => {
         position: 'bottom-left',
       });
     }
-  };
+  },[user.token, search, toast]);
 
   const handleDelete = delUser => {
     setSelectedUsers(selectedUsers.filter(sel => sel._id !== delUser._id));
@@ -124,6 +124,7 @@ const GroupChatModal = ({ children, fetchAgain, setFetchAgain }) => {
         isClosable: true,
         position: 'bottom',
       });
+      onClose();
     } catch (error) {
       toast({
         title: 'Failed to Create the Chat!',
@@ -138,12 +139,11 @@ const GroupChatModal = ({ children, fetchAgain, setFetchAgain }) => {
 
   useEffect(() => {
     handleSearch();
-  }, [search]);
+  }, [search, handleSearch]);
 
   useEffect(() => {
     socket.on('group formed', (newGroupFormed) => {
       setChats([newGroupFormed, ...chats]);
-      onClose();
     });
   });
 

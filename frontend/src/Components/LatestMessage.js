@@ -34,7 +34,7 @@ const LatestMessage = ({ currChat }) => {
   useEffect(() => {
     if(newLatestMessage !== undefined &&  currChat._id === newLatestMessage.chat._id)
       setLatestMessage(newLatestMessage);
-  }, [newLatestMessage]);
+  }, [newLatestMessage, currChat._id]);
   
   return (
     <>
