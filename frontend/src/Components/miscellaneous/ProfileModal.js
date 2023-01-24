@@ -25,9 +25,8 @@ const ProfileModal = (props) => {
   const { user, setUser } = ChatState();
   const toast = useToast();
 
-  const [pic, setPic] = useState();
+  const [pic, setPic] = useState('');
   const [loading, setLoading] = useState(false);
-  const [updatePic, setUpdatePic] = useState();
 
   const Upload = (pics) => {
     setLoading(true);
@@ -54,18 +53,19 @@ const ProfileModal = (props) => {
       }).then(res => res.json())
         .then(data => {
           setPic(data.url.toString());
+          setLoading(false);
         })
         .catch(err => {
           console.log(err);
+          setLoading(false);
         });
-        setLoading(false);
     } else {
       toast({
         title: "Please Select an Image!",
         status: "warning",
         duration: 3000,
         isClosable: true,
-        position: "bottom"
+        position: "bottom",
       });
       setLoading(false);
       return;
@@ -73,19 +73,28 @@ const ProfileModal = (props) => {
   }
 
   const handleSubmit = async e => {
+
     try {
       const config = {
         headers: {
           "Content-type": "application/json",
-          Authorization: `Bearer ${user.token}`,
+          'Authorization': `Bearer ${user.token}`,
         }
       };
-      const { data } = await axios.put(`api/user/picture`, { pic }, config);
-      // setTimeout(() => {
-      //   setUser(data);
-      //   props.setFetchAgain(!props.fetchAgain);
-      // }, 3000);
-      
+      const { data } = await axios.put(
+        `/api/user/update`,
+        {
+          id: user._id,
+          pic: pic,
+        },
+        config
+      );
+
+      setTimeout(() => {
+        setUser(data);
+        localStorage.setItem("userInfo", JSON.stringify(data));
+      }, 3000);
+
       toast({
         title: "Profile picture updated",
         status: "success",
@@ -152,19 +161,22 @@ const ProfileModal = (props) => {
 
           <ModalFooter>
             {props.user._id === user._id &&
-              <FormControl id="pic">
-                <Input
-                  type="file"
-                  width='90%'
-                  display='inline-block'
-                  p={1.5}
-                  accept="image/*"
-                  onChange={(e) => Upload(e.target.files[0])}
-                />
-              </FormControl>}
-            <Button isLoading={loading} colorScheme='teal' variant='ghost' mr={3} onClick={handleSubmit}>
-              Change
-            </Button>
+              <>
+                <FormControl id="pic">
+                  <Input
+                    type="file"
+                    width='90%'
+                    display='inline-block'
+                    p={1.5}
+                    accept="image/*"
+                    onChange={(e) => Upload(e.target.files[0])}
+                  />
+                </FormControl>
+                <Button isLoading={loading} colorScheme='teal' variant='ghost' mr={3} onClick={handleSubmit}>
+                  Change
+                </Button>
+              </>
+            }
             <Button colorScheme="blue" mr={3} onClick={onClose}>
               Close
             </Button>

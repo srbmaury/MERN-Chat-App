@@ -162,7 +162,7 @@ const MyChats = ({ fetchAgain }) => {
                   size="sm"
                   cursor="pointer"
                   name={getSender(loggedUser, chat.users, chat)}
-                  src={getSenderFull(loggedUser, chat.users, chat).pic}
+                  src={!chat.isGroupChat ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDZqg5vL6300Pfadt6T_PhpiYSXEn8gosMY-eE7k0FJczKzLA&s' : getSenderFull(loggedUser, chat.users, chat).pic}
                   marginTop="6px"
                 />
                 <Box

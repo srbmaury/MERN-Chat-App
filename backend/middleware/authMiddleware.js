@@ -17,6 +17,12 @@ const protect = asyncHandler(async (req, res, next) => {
 
       req.user = await User.findById(decoded.id).select("-password");
 
+      const currentTime = Date.now().valueOf() / 1000;
+      if (req.user.updatedAt < currentTime) {
+        req.user.updatedAt = currentTime;
+        await req.user.save();
+      }
+
       next();
     } catch (error) {
       res.status(401);

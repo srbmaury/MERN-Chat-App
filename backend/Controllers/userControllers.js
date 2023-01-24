@@ -72,10 +72,16 @@ const allUsers = asyncHandler(async (req, res) => {
 
 const updateProfilePicture = asyncHandler(async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(req.user.id, { pic: req.body.pic }, { new: true });
-        res.json(user);
+        const user = await User.findByIdAndUpdate(req.body.id, { pic: req.body.pic }, { new: true });
+        res.status(201).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            pic: user.pic,
+            token: generateToken(user._id),
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ id: req.body.id, error: err.message });
     }
 });
 

@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.route('/').post(registerUser).get(protect ,allUsers);
 router.post('/login', authUser);
-router.route('/picture').put(protect, updateProfilePicture);
+router.route('/update').put(protect, updateProfilePicture);
 
 module.exports = router;
