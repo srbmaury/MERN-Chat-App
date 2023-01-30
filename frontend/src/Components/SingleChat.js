@@ -90,6 +90,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   useEffect(() => {
     socket.on('message received', (newMessageReceived) => {
       if (!selectedChatCompare || selectedChatCompare._id !== newMessageReceived.chat._id) {
+        let mutedChats = JSON.parse(localStorage.getItem("mutedChats")) || [];
+        if(mutedChats.includes(newMessageReceived.chat._id)) return;
         if (!notification.includes(newMessageReceived)) {
           setNotification([newMessageReceived, ...notification]);
           setFetchAgain(!fetchAgain);

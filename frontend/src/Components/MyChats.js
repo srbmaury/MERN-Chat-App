@@ -1,12 +1,14 @@
-import { Avatar, Box, Button, Stack, Text, useToast } from '@chakra-ui/react';
+import { Avatar, Box, Button, MenuDivider, MenuItem, MenuList, Stack, Text, useToast } from '@chakra-ui/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import axios from 'axios';
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { AddIcon } from '@chakra-ui/icons';
+import { GoMute } from 'react-icons/go';
 import ChatLoading from './ChatLoading';
 import { getSender, getSenderFull } from '../config/ChatLogics';
 import GroupChatModal from './miscellaneous/GroupChatModal';
 import LatestMessage from './LatestMessage';
+import { ContextMenu } from 'chakra-ui-contextmenu';
 import io from 'socket.io-client';
 
 const ENDPOINT = "http://localhost:5000";
@@ -14,6 +16,7 @@ var socket;
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
   const [prevSelectedChat, setPrevSelectedChat] = useState();
+  const [mutedChats, setMutedChats] = useState([]);
 
   const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
 
@@ -44,7 +47,7 @@ const MyChats = ({ fetchAgain }) => {
         position: 'bottom-left',
       });
     }
-  },[user, setChats, toast]);
+  }, [user, setChats, toast]);
 
   useEffect(() => {
     try {
@@ -55,11 +58,9 @@ const MyChats = ({ fetchAgain }) => {
     }
   }, [fetchAgain, fetchChats]);
 
-  const f = (e, chatId) => {
+  const f = (e) => {
     e.preventDefault();
     setPrevSelectedChat(selectedChat);
-    let delete_icon = document.getElementById(`d${chatId}`);
-    (delete_icon.style.display === 'block') ? (delete_icon.style.display = 'none') : (delete_icon.style.display = 'block')
   }
 
   const deleteChat = async (chat) => {
@@ -101,6 +102,47 @@ const MyChats = ({ fetchAgain }) => {
     }
   }, [chats, selectedChat, prevSelectedChat, setSelectedChat, setChats]);
 
+  useEffect(() => {
+    async function fetchMutedChats() {
+      try {
+        const config = {
+          headers: {
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${user.token}`,
+          },
+        };
+        const res = await axios.get('/api/chat/muted', config);
+        setMutedChats(res.data.data);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+    fetchMutedChats();
+  }, []);
+
+  const changeMuteStatus = async (chatId) => {
+    try {
+      const config = {
+        headers: {
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const res = await axios.post(`/api/chat/${chatId}`, { user: user }, config);
+      if (res.data.success) {
+        let chats = [...mutedChats];
+        if (res.data.data.mutedUsers.includes(user._id)) {
+          chats.push(res.data.data);
+        } else {
+          chats = chats.filter(chat => chat._id !== chatId);
+        }
+        setMutedChats(chats);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <Box
       display={{ base: selectedChat ? 'none' : 'flex', md: 'flex' }}
@@ -111,6 +153,7 @@ const MyChats = ({ fetchAgain }) => {
       width={{ base: '100%', md: '31%' }}
       borderRadius="lg"
       borderWidth="1px"
+      justifyContent="flex-start"
     >
       <Box
         pb={3}
@@ -144,50 +187,69 @@ const MyChats = ({ fetchAgain }) => {
         overflowY="hidden"
       >
         {chats ? (
-          <Stack overflowY={'scroll'}>
+          <Stack isInlineoverflowY={'scroll'}>
             {chats.map(chat => (
-              <Box
-                onClick={() => setSelectedChat(chat)}
-                cursor="pointer"
-                bg={selectedChat === chat ? '#38B2AC' : '#E8E8E8'}
-                color={selectedChat === chat ? 'white' : 'black'}
-                px={3}
-                py={2}
-                borderRadius="lg"
+              <ContextMenu
                 key={chat._id}
-                onContextMenu={(e) => f(e, chat._id)}
+                renderMenu={() => (
+                  <MenuList>
+                    <MenuItem onClick={() => changeMuteStatus(chat._id)}>
+                      {mutedChats.find(mutedChat => mutedChat._id === chat._id) ? 'Unmute' : 'Mute'}
+                    </MenuItem>
+                    <MenuDivider />
+                    <MenuItem>
+                      <div
+                        id={`d${chat._id}`}
+                        onClick={() => deleteChat(chat)}
+                      >
+                        Delete
+                      </div>
+                    </MenuItem>
+                  </MenuList>
+                )}
               >
-                <Avatar
-                  mr={2}
-                  size="sm"
-                  cursor="pointer"
-                  name={getSender(loggedUser, chat.users, chat)}
-                  src={!chat.isGroupChat ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDZqg5vL6300Pfadt6T_PhpiYSXEn8gosMY-eE7k0FJczKzLA&s' : getSenderFull(loggedUser, chat.users, chat).pic}
-                  marginTop="6px"
-                />
-                <Box
-                  maxWidth="90%"
-                  display="inline-block"
-                >
-                  <Text>
-                    {!chat.isGroupChat
-                      ? getSender(loggedUser, chat.users, chat)
-                      : chat.chatName}
-                  </Text>
-                  <Text>
-                    <LatestMessage currChat={chat} />
-                  </Text>
-                </Box>
-                <DeleteIcon
-                  id={`d${chat._id}`}
-                  display="none"
-                  float="right"
-                  marginTop="15px"
-                  boxSize="20px"
-                  color="red"
-                  onClick={() => deleteChat(chat)}
-                />
-              </Box>
+                {
+                  ref =>
+                    <Box
+                      onClick={() => setSelectedChat(chat)}
+                      cursor="pointer"
+                      bg={selectedChat === chat ? '#38B2AC' : '#E8E8E8'}
+                      color={selectedChat === chat ? 'white' : 'black'}
+                      px={3}
+                      py={2}
+                      borderRadius="lg"
+                      onContextMenu={(e) => f(e)}
+                      ref={ref}
+                    >
+                      <Avatar
+                        mr={2}
+                        size="sm"
+                        cursor="pointer"
+                        name={getSender(loggedUser, chat.users, chat)}
+                        src={chat.isGroupChat ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDZqg5vL6300Pfadt6T_PhpiYSXEn8gosMY-eE7k0FJczKzLA&s' : getSenderFull(loggedUser, chat.users, chat).pic}
+                        marginTop="6px"
+                      />
+                      <Box
+                        maxWidth="90%"
+                        display="inline-block"
+                      >
+                        <Text>
+                          {!chat.isGroupChat
+                            ? getSender(loggedUser, chat.users, chat)
+                            : chat.chatName}
+                        </Text>
+                        <Text>
+                          <LatestMessage currChat={chat} />
+                        </Text>
+                        {mutedChats.find(mutedChat => mutedChat._id === chat._id) &&
+                          <GoMute
+                            style={{ position: 'fixed', marginTop: '-35px', marginLeft: '-30px' }}
+                          />
+                        }
+                      </Box>
+                    </Box>
+                }
+              </ContextMenu>
             ))}
           </Stack>
         ) : (
