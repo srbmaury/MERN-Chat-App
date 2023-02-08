@@ -61,6 +61,17 @@ export const formatDate = (givenDate) => {
   return givenDate.slice(8,10) + ' ' + checkMonth(givenDate.slice(5,7).toString()) + ' ' + givenDate.slice(0,4);
 };
 
+export const formatDate2 = (givenDate) => {
+  var date = (new Date());
+  var today = format(date);
+  date.setDate(date.getDate() - 1)
+  var yesterday = format(date);
+
+  if(givenDate.slice(0,10) === today) return givenDate.slice(11,16);
+  if(givenDate.slice(0,10) === yesterday) return "yesterday";
+  return givenDate.slice(8,10) + ' ' + checkMonth(givenDate.slice(5,7).toString()) + ' ' + givenDate.slice(0,4);
+};
+
 const checkMonth = (m) => {
   if(m === "01") return "january";
   if(m === "02") return "february";

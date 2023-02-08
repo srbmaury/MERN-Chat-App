@@ -69,7 +69,7 @@ const deleteMessage = asyncHandler(async (req, res) => {
             select: '-password'
         }).populate({
             path: 'latestMessage',
-            select: 'sender content',
+            select: 'sender content createdAt',
             populate: {
                 path: 'sender',
                 select: '-password'

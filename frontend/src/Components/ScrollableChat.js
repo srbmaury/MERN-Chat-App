@@ -1,17 +1,20 @@
 import { Avatar, Tooltip, useToast } from '@chakra-ui/react'
 import { DeleteIcon } from '@chakra-ui/icons'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import ScrollableFeed from 'react-scrollable-feed'
 import { formatDate, isFirstMessageofDay, isLastMessage, isSameSender, isSameSenderMargin } from '../config/ChatLogics'
 import { ChatState } from '../Context/ChatProvider'
 import axios from 'axios'
 import io from 'socket.io-client';
+import { CgMailForward } from 'react-icons/cg';
+import ForwardModal from './miscellaneous/ForwardModal'
 
 const ENDPOINT = "http://localhost:5000";
 var socket;
 
 const ScrollableChat = ({ messages, setMessages }) => {
     const { user, selectedChat } = ChatState();
+    const [currY, setCurrY] = useState(400);
 
     const toast = useToast();
 
@@ -55,11 +58,18 @@ const ScrollableChat = ({ messages, setMessages }) => {
 
     useEffect(() => {
         socket.on('new latest message', (particularChat, message) => {
-            if(user._id !== message.sender._id && selectedChat._id === particularChat._id){
+            if (user._id !== message.sender._id && selectedChat._id === particularChat._id) {
                 setMessages(messages.filter(m => m._id !== message._id));
             }
         });
     });
+
+    useEffect(() => {
+        const mouseMoveEvent = (e) => {
+            setCurrY(e.clientY);
+        };
+        window.addEventListener('mousemove', mouseMoveEvent);
+    }, []);
 
     return (
         <ScrollableFeed>
@@ -133,7 +143,7 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                     </Tooltip>
                                 )
                             }
-                            <span
+                            <span id={`span${m._id}`}
                                 style={{
                                     backgroundColor: `${m.sender._id === user._id ? "#BEE3F8" : "#B9F5D0"}`,
                                     borderRadius: "20px",
@@ -146,7 +156,43 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                 }}
                                 onDoubleClick={() => displayDeleteIcon(m._id)}
                             >
+                                <ForwardModal content={m.content}>
+                                {
+                                    document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
+                                    <span style={{
+                                        position:'absolute',
+                                        marginLeft: '-44px',
+                                        cursor: 'pointer',
+                                        fontSize:'30px',
+                                        top:document.getElementById(`span${m._id}`).getBoundingClientRect().top
+                                    }}
+                                    >
+                                        {
+                                            m.sender._id === user._id &&
+                                            <CgMailForward />
+                                        }
+                                    </span>
+                                }
+                                </ForwardModal>
                                 {m.content}
+                                <ForwardModal content={m.content}>
+                                {
+                                    document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
+                                    <span style={{
+                                        position:'absolute',
+                                        marginLeft: '44px',
+                                        cursor: 'pointer',
+                                        fontSize:'30px',
+                                        top:document.getElementById(`span${m._id}`).getBoundingClientRect().top
+                                    }}
+                                    >
+                                        {
+                                            m.sender._id !== user._id &&
+                                            <CgMailForward />
+                                        }
+                                    </span>
+                                }
+                                </ForwardModal>
                                 <span
                                     style={{ fontSize: '10px', marginLeft: '4px', color: '#555' }}>
                                     {m.createdAt.toString().slice(11, 16)}

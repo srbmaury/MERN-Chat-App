@@ -25,7 +25,7 @@ import io from 'socket.io-client';
 const ENDPOINT = "http://localhost:5000";
 var socket;
 
-const GroupChatModal = ({ children, fetchAgain, setFetchAgain }) => {
+const GroupChatModal = ({ children }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [groupChatName, setGroupChatName] = useState();
   const [selectedUsers, setSelectedUsers] = useState([]);

@@ -187,7 +187,7 @@ const MyChats = ({ fetchAgain }) => {
         overflowY="hidden"
       >
         {chats ? (
-          <Stack isInlineoverflowY={'scroll'}>
+          <Stack>
             {chats.map(chat => (
               <ContextMenu
                 key={chat._id}
@@ -230,17 +230,13 @@ const MyChats = ({ fetchAgain }) => {
                         marginTop="6px"
                       />
                       <Box
-                        maxWidth="90%"
+                        width="85%"
                         display="inline-block"
                       >
-                        <Text>
-                          {!chat.isGroupChat
-                            ? getSender(loggedUser, chat.users, chat)
-                            : chat.chatName}
-                        </Text>
-                        <Text>
-                          <LatestMessage currChat={chat} />
-                        </Text>
+                        {!chat.isGroupChat
+                          ? getSender(loggedUser, chat.users, chat)
+                          : chat.chatName}
+                        <LatestMessage currChat={chat} />
                         {mutedChats.find(mutedChat => mutedChat._id === chat._id) &&
                           <GoMute
                             style={{ position: 'fixed', marginTop: '-35px', marginLeft: '-30px' }}
