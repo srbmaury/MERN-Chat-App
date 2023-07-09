@@ -77,7 +77,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
   };
 
   const handleRemove = async (user1, type) => {
-    if(type == 1)
+    if(type === 1)
         if(selectedChat.groupAdmin._id !== user._id || user1._id === selectedChat.groupAdmin._id) 
             return
     try {

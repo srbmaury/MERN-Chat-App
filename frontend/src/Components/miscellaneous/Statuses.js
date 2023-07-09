@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, FormControl, FormLabel, Image, Input, List, ListIcon, ListItem, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Stack, Text, Textarea, useDisclosure, useTagStyles, useToast } from '@chakra-ui/react'
+import { Avatar, Box, Button, FormControl, FormLabel, Image, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Stack, Text, Textarea, useDisclosure, useToast } from '@chakra-ui/react'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ChatState } from '../../Context/ChatProvider';
 import axios from 'axios';
@@ -117,7 +117,7 @@ const Statuses = (props) => {
                 media: media,
             };
             console.log(data);
-            const response = await axios.post('/api/status', data, config);
+            await axios.post('/api/status', data, config);
             toast({
                 title: 'Status Updated!',
                 status: 'success',
@@ -191,7 +191,7 @@ const Statuses = (props) => {
 
     useEffect(() => {
         fetchStatuses();
-    }, [props.isModalOpen]);
+    }, [props.isModalOpen, fetchStatuses]);
 
     const [todisplayName, setTodisplayName] = useState('');
     const [todisplayPic, setTodisplayPic] = useState('');
