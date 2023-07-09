@@ -76,7 +76,10 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
-  const handleRemove = async user1 => {
+  const handleRemove = async (user1, type) => {
+    if(type == 1)
+        if(selectedChat.groupAdmin._id !== user._id || user1._id === selectedChat.groupAdmin._id) 
+            return
     try {
       setLoading(true);
       const config = {
@@ -200,8 +203,8 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
                 <UserBadgeItem
                   key={u._id}
                   user={u}
-                  handleFunction={() => handleRemove(u)}
-                  displayCloseIcon={selectedChat.groupAdmin._id === user._id}
+                  handleFunction={() => handleRemove(u, 1)}
+                  displayCloseIcon={selectedChat.groupAdmin._id === user._id && u._id !== selectedChat.groupAdmin._id}
                 />
               ))}
             </Box>
@@ -251,7 +254,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
           </ModalBody>
 
           <ModalFooter>
-            <Button colorScheme="red" mr={3} onClick={() => handleRemove(user)}>
+            <Button colorScheme="red" mr={3} onClick={() => handleRemove(user, 2)}>
               Leave group
             </Button>
           </ModalFooter>
