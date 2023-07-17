@@ -2,6 +2,10 @@ const asyncHandler = require("express-async-handler");
 const Chat = require('../models/chatModel');
 const User = require("../models/userModel");
 const Message = require('../models/messageModel');
+const crypto = require('crypto');
+
+// Encryption key (you can generate a secure key using a key generation function)
+const encryptionKey = process.env.ENCRYPTION_KEY || "5a2a9a61b7cc2e48b0b631f8d19248dce8fe3067692c26d6add6eb215a72a20f";
 
 const accessChat = asyncHandler(async (req, res) => {
     const { userId } = req.body;
@@ -48,6 +52,13 @@ const accessChat = asyncHandler(async (req, res) => {
     }
 });
 
+function decryptMessage(encryptedMessage) {
+    const decipher = crypto.createDecipher('aes-256-cbc', encryptionKey);
+    let decrypted = decipher.update(encryptedMessage, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
+
 const fetchChats = asyncHandler(async (req, res) => {
     try {
         Chat.find({ users: { $elemMatch: { $eq: req.user._id } } })
@@ -59,6 +70,10 @@ const fetchChats = asyncHandler(async (req, res) => {
                 results = await User.populate(results, {
                     path: "latestMessage.sender",
                     select: "name pic email",
+                });
+                results.forEach((x) => {
+                    if (x.latestMessage)
+                        x.latestMessage.content = decryptMessage(x.latestMessage.content);
                 });
                 res.status(200).send(results);
             });

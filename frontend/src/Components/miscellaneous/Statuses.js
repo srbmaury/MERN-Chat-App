@@ -15,7 +15,7 @@ const Statuses = (props) => {
     const [loading, setLoading] = useState(false);
 
     const { isOpen, onOpen, onClose } = useDisclosure();
-    
+
     const Upload = (media) => {
         setLoading(true);
         if (media === undefined) {
@@ -40,12 +40,10 @@ const Statuses = (props) => {
                 body: data,
             }).then(res => res.json())
                 .then(data => {
-                    console.log("HO GYA");
                     setMedia(data.url.toString());
                     setLoading(false);
                 })
                 .catch(err => {
-                    console.log("ERR");
                     console.log(err);
                     setLoading(false);
                 });
@@ -86,7 +84,16 @@ const Statuses = (props) => {
             };
 
             const { data } = await axios.get('/api/status', config);
-            setStatuses(data);
+
+            // Filter statuses within the last 24 hours
+            const filteredStatuses = data.filter((status) => {
+                const statusTimestamp = new Date(status.timestamp);
+                const twentyFourHoursAgo = new Date();
+                twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+                return statusTimestamp >= twentyFourHoursAgo;
+            });
+
+            setStatuses(filteredStatuses);
             const status = statuses.find((status) => status.user._id === user._id);
             if (status) {
                 setText(status.text);
@@ -116,7 +123,6 @@ const Statuses = (props) => {
                 text: text,
                 media: media,
             };
-            console.log(data);
             await axios.post('/api/status', data, config);
             toast({
                 title: 'Status Updated!',
@@ -126,7 +132,6 @@ const Statuses = (props) => {
                 position: 'bottom-left',
             });
         } catch (error) {
-            console.log(error);
             toast({
                 title: 'Error Occurred!',
                 description: 'Failed to add the status',
@@ -177,7 +182,6 @@ const Statuses = (props) => {
             setMedia("");
             setText("");
         } catch (error) {
-            console.log(error);
             toast({
                 title: 'Error Occurred!',
                 description: 'Failed to delete the status',
@@ -246,7 +250,7 @@ const Statuses = (props) => {
                                         cursor="pointer"
                                         name={user.name}
                                         src={media}
-                                        onClick={()=>displayPhoto(user.name, media, text)}
+                                        onClick={() => displayPhoto(user.name, media, text)}
                                     />
                                     <Box my={-1} >
                                         <Text
@@ -283,7 +287,7 @@ const Statuses = (props) => {
                                             cursor="pointer"
                                             name={status.user.name}
                                             src={status.media}
-                                            onClick={()=>displayPhoto(status.user.name, status.media, status.text)}
+                                            onClick={() => displayPhoto(status.user.name, status.media, status.text)}
                                         />
                                         <Box my={-1} >
                                             <Text
@@ -329,7 +333,7 @@ const Statuses = (props) => {
                     </ModalBody>
                 </ModalContent>
             </Modal>
-            <Modal isOpen={dusraOpen} onClose={()=>setDusraOpen(false)}>
+            <Modal isOpen={dusraOpen} onClose={() => setDusraOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
                     <ModalHeader>{todisplayName}</ModalHeader>

@@ -24,3 +24,6 @@ The application will be running on http://localhost:3000.
 - [React.js](https://reactjs.org/)
 
 Made with ❤️ by [srbmaury](https://github.com/srbmaury)
+
+
+Future Scope: https://chat.openai.com/share/9f753eed-2de7-40b9-be5a-9e9994d5bc8d
