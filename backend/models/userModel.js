@@ -11,6 +11,8 @@ const userSchema = mongoose.Schema(
       default:
         "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
     },
+    isEmailVerified: { type: Boolean, default: false },
+    verificationToken: { type: String },
   },
   { timestamps: true }
 );
@@ -23,10 +25,12 @@ userSchema.pre('save', async function (next){
     if(!this.isModified){
         next();
     }
-
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    if(this.createdAt === this.updatedAt){
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+    }
 })
+
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;

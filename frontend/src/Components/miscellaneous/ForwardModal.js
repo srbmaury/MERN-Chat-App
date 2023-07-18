@@ -7,7 +7,7 @@ import { ChatState } from '../../Context/ChatProvider';
 
 const ENDPOINT = "http://localhost:5000";
 var socket;
-const ForwardModal = ({ children, content }) => {
+const ForwardModal = ({ children, content, messages, setMessages }) => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const { user, chats, setChats, setNewLatestMessage } = ChatState();
     const toast = useToast();
@@ -36,6 +36,7 @@ const ForwardModal = ({ children, content }) => {
             );
 
             socket.emit('new message', data);
+            setMessages([...messages, data]);
             setNewLatestMessage(data);
             const chatToSetToTop = chats.find(chat => chat._id === chatId);
             const updatedChats = [chatToSetToTop, ...chats.filter(chat => chat._id !== chatId)];

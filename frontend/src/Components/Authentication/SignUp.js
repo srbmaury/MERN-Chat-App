@@ -2,7 +2,6 @@ import { Button, FormControl, FormLabel, Input, InputGroup, InputRightElement, u
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
-import { ChatState } from '../../Context/ChatProvider';
 
 const SignUp = () => {
     const [show, setShow] = useState(false);
@@ -16,8 +15,6 @@ const SignUp = () => {
     const history = useHistory();
 
     const handleClick = () => setShow(!show);
-
-    const { setUser } = ChatState();
 
     const postDetails = (pics) => {
         setLoading(true);
@@ -92,7 +89,7 @@ const SignUp = () => {
                     "Content-type": "application/json",
                 },
             };
-            const { data } = await axios.post(
+            await axios.post(
                 "/api/user",
                 {
                     name,
@@ -103,16 +100,14 @@ const SignUp = () => {
                 config
             );
             toast({
-                title: "Registration Successful",
+                title: "Registration Successful. Please Verify your email.",
                 status: "success",
                 duration: 5000,
                 isClosable: true,
                 position: "bottom",
             });
-            localStorage.setItem("userInfo", JSON.stringify(data));
-            setUser(data);
             setLoading(false);
-            history.push("/chats");
+            history.push("/");
         } catch (error) {
             toast({
                 title: "Error Occured!",

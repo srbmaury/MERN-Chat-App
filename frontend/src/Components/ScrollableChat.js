@@ -156,7 +156,7 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                 }}
                                 onDoubleClick={() => displayDeleteIcon(m._id)}
                             >
-                                <ForwardModal content={m.content}>
+                                <ForwardModal content={m.content} messages={messages} setMessages={setMessages}>
                                 {
                                     document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
                                     <span style={{
@@ -175,7 +175,7 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                 }
                                 </ForwardModal>
                                 {m.content}
-                                <ForwardModal content={m.content}>
+                                <ForwardModal content={m.content} messages={messages} setMessages={setMessages}>
                                 {
                                     document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
                                     <span style={{

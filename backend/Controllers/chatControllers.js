@@ -3,9 +3,11 @@ const Chat = require('../models/chatModel');
 const User = require("../models/userModel");
 const Message = require('../models/messageModel');
 const crypto = require('crypto');
+const dotenv = require("dotenv");
 
+dotenv.config();
 // Encryption key (you can generate a secure key using a key generation function)
-const encryptionKey = process.env.ENCRYPTION_KEY || "5a2a9a61b7cc2e48b0b631f8d19248dce8fe3067692c26d6add6eb215a72a20f";
+const encryptionKey = process.env.ENCRYPTION_KEY;
 
 const accessChat = asyncHandler(async (req, res) => {
     const { userId } = req.body;
@@ -52,9 +54,14 @@ const accessChat = asyncHandler(async (req, res) => {
     }
 });
 
+const iv = crypto.randomBytes(16);
+
 function decryptMessage(encryptedMessage) {
-    const decipher = crypto.createDecipher('aes-256-cbc', encryptionKey);
-    let decrypted = decipher.update(encryptedMessage, 'hex', 'utf8');
+    const iv = Buffer.from(encryptedMessage.slice(0, 32), 'hex'); // Extract the IV
+    const encrypted = encryptedMessage.slice(32);
+
+    const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKey, iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;
 }

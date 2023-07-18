@@ -1,0 +1,32 @@
+<!-- verification-email-template.html -->
+<div
+    style="
+        background-color: #f9f9f9;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+    "
+>
+    <h2 style="color: #333; text-align: center; margin-bottom: 20px">
+        Email Verification
+    </h2>
+    <p style="color: #555; text-align: center">
+        Please verify your email address by clicking on the following link:
+    </p>
+    <div style="text-align: center; margin-top: 20px">
+        <a
+            href="http://localhost:5000/api/user/verify/{{verificationToken}}"
+            style="
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: #fff;
+                text-decoration: none;
+                border-radius: 4px;
+            "
+            >Verify Email</a
+        >
+    </div>
+    <p style="color: #ff0000; text-align: center; margin-top: 30px">
+        ⚠️ If you didn't request this verification, please ignore this email.
+    </p>
+</div>

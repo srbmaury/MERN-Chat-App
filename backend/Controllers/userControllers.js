@@ -1,6 +1,72 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const generateToken = require('../config/generateToken');
+const nodemailer = require("nodemailer");
+const { google } = require("googleapis");
+const dotenv = require("dotenv");
+const fs = require("fs");
+
+dotenv.config();
+
+const clientId = process.env.CLIENT_ID;
+const clientSecret = process.env.CLIENT_SECRET;
+const refreshToken = process.env.REFRESH_TOKEN;
+const myEmailId = process.env.EMAIL_ID;
+
+const generateVerificationToken = () => {
+    const length = 10;
+    const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let token = "";
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        token += characters.charAt(randomIndex);
+    }
+    return token;
+};
+
+const sendVerificationEmail = async (email, verificationToken) => {
+    try {
+        const oAuth2Client = new google.auth.OAuth2(
+            clientId,
+            clientSecret,
+            "https://developers.google.com/oauthplayground" // Redirect URI
+        );
+
+        oAuth2Client.setCredentials({
+            refresh_token: refreshToken,
+        });
+
+        const accessToken = await oAuth2Client.getAccessToken();
+
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                type: "OAuth2",
+                user: myEmailId,
+                clientId,
+                clientSecret,
+                refreshToken,
+                accessToken,
+            },
+        });
+
+        const emailTemplate = fs.readFileSync("backend/templates/send-verification-email-success.html", "utf8");
+        const html = emailTemplate.replace("{{verificationToken}}", verificationToken);
+
+        const mailOptions = {
+            from: myEmailId,
+            to: email,
+            subject: "Email Verification",
+            html,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        return verificationToken;
+    } catch (error) {
+        throw new Error("Failed to send verification email");
+    }
+};
 
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password, pic } = req.body;
@@ -16,24 +82,53 @@ const registerUser = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error("User already exists");
     }
+
+    const verificationToken = generateVerificationToken();
+
     const user = await User.create({
         name,
         email,
         password,
         pic,
+        verificationToken,
     });
 
     if (user) {
+        await sendVerificationEmail(email, verificationToken);
         res.status(201).json({
             _id: user._id,
             name: user.name,
             email: user.email,
             pic: user.pic,
+            isEmailVerified: user.isEmailVerified,
             token: generateToken(user._id),
         });
     } else {
         res.status(400);
         throw new Error("Failed to create the user");
+    }
+});
+
+const verifyEmail = asyncHandler(async (req, res) => {
+    const { token } = req.params;
+
+    const user = await User.findOne({ verificationToken: token });
+
+    if (!user) {
+        res.status(404);
+        throw new Error("Invalid verification token");
+    }
+
+    user.isEmailVerified = true;
+    await user.save();
+
+    const successHtml = fs.readFileSync("backend/templates/verification-success.html", "utf8");
+    const failureHtml = fs.readFileSync("backend/templates/verification-failure.html", "utf8");
+
+    if (user && user.isEmailVerified) {
+        res.send(successHtml);
+    } else {
+        res.send(failureHtml);
     }
 });
 
@@ -43,16 +138,21 @@ const authUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
-        res.json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            pic: user.pic,
-            token: generateToken(user._id),
-        });
+        if (user.isEmailVerified) {
+            res.json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                pic: user.pic,
+                isEmailVerified: user.isEmailVerified,
+                token: generateToken(user._id),
+            });
+        } else {
+            throw new Error("Please verify your email first");
+        }
     } else {
         res.status(401);
-        throw new Error("FInvalid Email or Password");
+        throw new Error("Invalid Email or Password");
     }
 });
 
@@ -85,4 +185,4 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { registerUser, authUser, allUsers, updateProfilePicture };
+module.exports = { registerUser, verifyEmail, authUser, allUsers, updateProfilePicture };
