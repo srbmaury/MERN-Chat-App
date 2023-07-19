@@ -42,7 +42,7 @@ const LatestMessage = ({ currChat }) => {
 
     return (
         <Flex
-            style={{ width: '100%', display: 'flex', alignItems: 'center' }}
+            style={{ width: '100%', display: 'flex',justifyContent:'space-between', alignItems: 'center' }}
         >
             <Box sx={{ display: "flex" }}>
                 {latestMessage && (
@@ -53,8 +53,6 @@ const LatestMessage = ({ currChat }) => {
                 {latestMessage && latestMessage.media && latestMessage.media !== "" && (
                     <Image src={latestMessage.media} alt="Image" boxSize="20px" ml="1" mr="1" />
                 )}
-            </Box>
-            <Box>
                 {latestMessage && latestMessage.content && (
                     <>
                         {latestMessage.content.length > 30
@@ -63,6 +61,8 @@ const LatestMessage = ({ currChat }) => {
                         }
                     </>
                 )}
+            </Box>
+            <Box>
                 {latestMessage && latestMessage.createdAt && formatDate2(latestMessage.createdAt)}
             </Box>
         </Flex>
