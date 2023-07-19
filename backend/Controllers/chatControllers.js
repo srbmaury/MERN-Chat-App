@@ -54,8 +54,6 @@ const accessChat = asyncHandler(async (req, res) => {
     }
 });
 
-const iv = crypto.randomBytes(16);
-
 function decryptMessage(encryptedMessage) {
     const iv = Buffer.from(encryptedMessage.slice(0, 32), 'hex'); // Extract the IV
     const encrypted = encryptedMessage.slice(32);
@@ -79,8 +77,10 @@ const fetchChats = asyncHandler(async (req, res) => {
                     select: "name pic email",
                 });
                 results.forEach((x) => {
-                    if (x.latestMessage)
+                    if (x.latestMessage){
                         x.latestMessage.content = decryptMessage(x.latestMessage.content);
+                        x.latestMessage.media = decryptMessage(x.latestMessage.media);
+                    }
                 });
                 res.status(200).send(results);
             });

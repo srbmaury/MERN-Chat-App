@@ -7,7 +7,7 @@ import { ChatState } from '../../Context/ChatProvider';
 
 const ENDPOINT = "http://localhost:5000";
 var socket;
-const ForwardModal = ({ children, content, messages, setMessages }) => {
+const ForwardModal = ({ children, content, media, messages, setMessages }) => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const { user, chats, setChats, setNewLatestMessage } = ChatState();
     const toast = useToast();
@@ -30,6 +30,7 @@ const ForwardModal = ({ children, content, messages, setMessages }) => {
                 '/api/message',
                 {
                     content: content,
+                    media: media,
                     chatId: chatId,
                 },
                 config

@@ -1,4 +1,4 @@
-import { Avatar, Tooltip, useToast } from '@chakra-ui/react'
+import { Avatar, Image, Tooltip, useToast } from '@chakra-ui/react'
 import { DeleteIcon } from '@chakra-ui/icons'
 import React, { useEffect, useState } from 'react'
 import ScrollableFeed from 'react-scrollable-feed'
@@ -148,7 +148,7 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                     backgroundColor: `${m.sender._id === user._id ? "#BEE3F8" : "#B9F5D0"}`,
                                     borderRadius: "20px",
                                     padding: "5px 15px",
-                                    maxWidth: "75%",
+                                    maxWidth: m.media ? 200 : "75%",
                                     marginLeft: isSameSenderMargin(messages, m, i, user._id),
                                     marginTop: (isSameSender(messages, m, i) ? 3 : 10),
                                     left: 0,
@@ -156,42 +156,45 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                 }}
                                 onDoubleClick={() => displayDeleteIcon(m._id)}
                             >
-                                <ForwardModal content={m.content} messages={messages} setMessages={setMessages}>
-                                {
-                                    document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
-                                    <span style={{
-                                        position:'absolute',
-                                        marginLeft: '-44px',
-                                        cursor: 'pointer',
-                                        fontSize:'30px',
-                                        top:document.getElementById(`span${m._id}`).getBoundingClientRect().top
-                                    }}
-                                    >
-                                        {
-                                            m.sender._id === user._id &&
-                                            <CgMailForward />
-                                        }
-                                    </span>
-                                }
+                                <ForwardModal content={m.content} media={m.media} messages={messages} setMessages={setMessages}>
+                                    {
+                                        document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
+                                        <span style={{
+                                            position: 'absolute',
+                                            marginLeft: '-44px',
+                                            marginTop: m.media && 100,
+                                            cursor: 'pointer',
+                                            fontSize: '30px',
+                                            top: document.getElementById(`span${m._id}`).getBoundingClientRect().top
+                                        }}
+                                        >
+                                            {
+                                                m.sender._id === user._id &&
+                                                <CgMailForward />
+                                            }
+                                        </span>
+                                    }
                                 </ForwardModal>
-                                {m.content}
-                                <ForwardModal content={m.content} messages={messages} setMessages={setMessages}>
-                                {
-                                    document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
-                                    <span style={{
-                                        position:'absolute',
-                                        marginLeft: '44px',
-                                        cursor: 'pointer',
-                                        fontSize:'30px',
-                                        top:document.getElementById(`span${m._id}`).getBoundingClientRect().top
-                                    }}
-                                    >
-                                        {
-                                            m.sender._id !== user._id &&
-                                            <CgMailForward />
-                                        }
-                                    </span>
-                                }
+                                {m.media && <Image src={m.media} boxSize={200} alt="Image" />}
+                                {m.content && m.content}
+                                <ForwardModal content={m.content} media={m.media} messages={messages} setMessages={setMessages}>
+                                    {
+                                        document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
+                                        <span style={{
+                                            position: 'absolute',
+                                            marginLeft: m.media ? 188 : '44px',
+                                            marginTop: m.media && 100,
+                                            cursor: 'pointer',
+                                            fontSize: '30px',
+                                            top: document.getElementById(`span${m._id}`).getBoundingClientRect().top
+                                        }}
+                                        >
+                                            {
+                                                m.sender._id !== user._id &&
+                                                <CgMailForward />
+                                            }
+                                        </span>
+                                    }
                                 </ForwardModal>
                                 <span
                                     style={{ fontSize: '10px', marginLeft: '4px', color: '#555' }}>

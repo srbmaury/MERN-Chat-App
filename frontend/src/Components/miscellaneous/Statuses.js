@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { ChatState } from '../../Context/ChatProvider';
 import axios from 'axios';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import Upload from './Cloudinary';
 
 const Statuses = (props) => {
     const [statuses, setStatuses] = useState([]);
@@ -16,51 +17,7 @@ const Statuses = (props) => {
 
     const { isOpen, onOpen, onClose } = useDisclosure();
 
-    const Upload = (media) => {
-        setLoading(true);
-        if (media === undefined) {
-            toast({
-                title: 'Please select an image!',
-                status: 'warning',
-                duration: 3000,
-                isClosable: true,
-                position: 'bottom'
-            });
-            setLoading(false);
-            return;
-        }
-
-        if (media.type === 'image/jpeg' || media.type === 'image/png') {
-            const data = new FormData();
-            data.append('file', media);
-            data.append('upload_preset', 'chat-app');
-            data.append('cloud_name', 'dnimsxcmh');
-            fetch('https://api.cloudinary.com/v1_1/dnimsxcmh/image/upload', {
-                method: 'post',
-                body: data,
-            }).then(res => res.json())
-                .then(data => {
-                    setMedia(data.url.toString());
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.log(err);
-                    setLoading(false);
-                });
-        } else {
-            toast({
-                title: "Please Select an Image!",
-                status: "warning",
-                duration: 3000,
-                isClosable: true,
-                position: "bottom",
-            });
-            setLoading(false);
-            return;
-        }
-    }
     const handleSave = () => {
-
         if (!media || !text) {
             toast({
                 title: 'Error Occured!',
@@ -321,7 +278,7 @@ const Statuses = (props) => {
                     <ModalBody>
                         <FormControl>
                             <FormLabel>Upload Image</FormLabel>
-                            <Input type="file" onChange={(e) => Upload(e.target.files[0])} />
+                            <Input type="file" onChange={(e) => Upload(e.target.files[0], setMedia, setLoading)} />
                         </FormControl>
                         <FormControl mt={4}>
                             <FormLabel>Caption</FormLabel>

@@ -2,6 +2,7 @@ import { Button, FormControl, FormLabel, Input, InputGroup, InputRightElement, u
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
+import Upload from '../miscellaneous/Cloudinary';
 
 const SignUp = () => {
     const [show, setShow] = useState(false);
@@ -15,49 +16,6 @@ const SignUp = () => {
     const history = useHistory();
 
     const handleClick = () => setShow(!show);
-
-    const postDetails = (pics) => {
-        setLoading(true);
-        if(pics === undefined){
-            toast({
-                title: 'Please select an image!',
-                status: 'warning',
-                duration: 3000,
-                isClosable: true,
-                position: 'bottom'
-            });
-            return;
-        }
-
-        if(pics.type === 'image/jpeg' || pics.type === 'image/png'){
-            const data = new FormData();
-            data.append('file', pics);
-            data.append('upload_preset', 'chat-app');
-            data.append('cloud_name','dnimsxcmh');
-            fetch('https://api.cloudinary.com/v1_1/dnimsxcmh/image/upload', {
-                method: 'post', 
-                body: data,
-            }).then(res => res.json())
-            .then(data => {
-                setPic(data.url.toString());
-                setLoading(false);
-            })
-            .catch(err => {
-                console.log(err);
-                setLoading(false);
-            });
-        }else {
-            toast({
-              title: "Please Select an Image!",
-              status: "warning",
-              duration: 3000,
-              isClosable: true,
-              position: "bottom",
-            });
-            setLoading(false);
-            return;
-        }
-    }
 
     const submitHandler = async () => {
         setLoading(true);
@@ -178,7 +136,7 @@ const SignUp = () => {
                         type="file"
                         p={1.5}
                         accept="image/*"
-                        onChange={(e) => postDetails(e.target.files[0])}
+                        onChange={(e) => Upload(e.target.files[0], setPic, setLoading)}
                     />
             </FormControl>
 

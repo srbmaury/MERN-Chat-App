@@ -1,6 +1,6 @@
 # MERN Stack Chat App
 
-![MERN Stack Chat App](https://example.com/images/app_screenshot.png)
+![MERN Stack Chat App](https://github.com/srbmaury/MERN-Chat-App/blob/master/frontend/public/preview.png)
 
 Welcome to the MERN Stack Chat App! This application allows users to securely communicate with others through one-to-one or group chats. With features like email verification, password encryption, message forwarding, and more, the MERN Stack Chat App ensures a safe and seamless chatting experience.
 
@@ -38,6 +38,8 @@ The MERN Stack Chat App is built using the following technologies:
 - **mongoose:** An Object Data Modeling (ODM) library for MongoDB and Node.js.
 - **nodemailer:** A module for sending emails using Node.js.
 - **react-overflow:** A React component for handling overflow content.
+- **Cloudinary:** A clod-based media-management platform.
+
 ## Installation
 
 To run the MERN Stack Chat App locally, follow these steps:
@@ -57,11 +59,12 @@ CLIENT_ID=your-client-id
 CLIENT_SECRET=your-client-secret
 REFRESH_TOKEN=your-refresh-token
 EMAIL_ID=your-email-id
+CLOUD_NAME=your-cloudinary-cloud-name
+API_KEY=your-cloudinary-api-key
+API_SECRET=your-cloudinary-api-secret
+UPLOAD_PRESET=cloudinary-upload-preset
 ```
 
 Make sure to replace the placeholder values (`your-mongodb-connection-string`, `your-jwt-secret`, etc.) with the actual values specific to your environment and setup.
 
 Made with ❤️ by [srbmaury](https://github.com/srbmaury)
-
-
-Future Scope: https://chat.openai.com/share/9f753eed-2de7-40b9-be5a-9e9994d5bc8d

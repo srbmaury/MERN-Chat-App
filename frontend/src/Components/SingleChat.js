@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import {
     Box,
+    CircularProgress,
     FormControl,
     IconButton,
+    Image,
     Input,
     InputGroup,
     InputRightElement,
@@ -23,6 +25,7 @@ import io from 'socket.io-client';
 import Lottie from 'react-lottie';
 import { IoMdSend } from 'react-icons/io';
 import { GrAttachment } from 'react-icons/gr';
+import Upload from './miscellaneous/Cloudinary';
 
 const ENDPOINT = "http://localhost:5000";
 var socket, selectedChatCompare;
@@ -30,10 +33,12 @@ var socket, selectedChatCompare;
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [sendPicLoading, setSendPicLoading] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const [socketConnected, setSocketConnected] = useState(false);
     const [typing, setTyping] = useState(false);
     const [istyping, setIsTyping] = useState(false);
+    const [media, setMedia] = useState('');
     const toast = useToast();
 
     const defaultOptions = {
@@ -112,7 +117,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
 
     const sendMessage = async event => {
-        if (newMessage) {
+        console.log(newMessage, media);
+        if (newMessage || media) {
             socket.emit('stop typing', selectedChat._id);
             try {
                 const config = {
@@ -123,11 +129,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 };
 
                 setNewMessage('');
+                setMedia('');
                 const { data } = await axios.post(
                     '/api/message',
                     {
                         content: newMessage,
                         chatId: selectedChat._id,
+                        media: media,
                     },
                     config
                 );
@@ -229,6 +237,23 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 <ScrollableChat messages={messages} setMessages={setMessages} />
                             </div>
                         )}
+                        {media != "" &&
+                            <Box
+                                width="100%"
+                                height="70px"
+                                borderRadius="10px"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="flex-start"
+                                backgroundColor="blue.500"
+                                padding="5px"
+                            >
+                                <Image src={media} boxSize="60px" borderRadius="50%" marginRight="10px" />
+                                <Box color="white" fontSize="18px" fontWeight="bold">
+                                    Image
+                                </Box>
+                            </Box>
+                        }
                         <FormControl onKeyDown={handleClick} isRequired mt={3}>
                             {istyping ?
                                 <div>
@@ -249,18 +274,20 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                     width="calc(100% - 4.5rem)"
                                 />
                                 <InputRightElement width="4.5rem">
-                                    <GrAttachment
-                                        size={20}
-                                        color="#004D40"
-                                        cursor="pointer"
-                                        style={{ marginRight: '10px' }}
-                                    />
-                                    <IoMdSend
-                                        size={30}
-                                        color="#004D40"
-                                        cursor="pointer"
-                                        onClick={sendMessage}
-                                    />
+                                    <label htmlFor="fileInput">
+                                        <GrAttachment size={20} color="#004D40" cursor="pointer" style={{ marginRight: '10px' }} />
+                                    </label>
+                                    <Input type="file" id="fileInput" onChange={(e) => Upload(e.target.files[0], setMedia, setSendPicLoading)} sx={{ display: "none" }} />
+                                    {sendPicLoading ? (
+                                        <CircularProgress isIndeterminate size="30px" color="#004D40" />
+                                    ) : (
+                                        <IoMdSend
+                                            size={30}
+                                            color="#004D40"
+                                            cursor="pointer"
+                                            onClick={sendMessage}
+                                        />
+                                    )}
                                 </InputRightElement>
                             </InputGroup>
                         </FormControl>

@@ -31,19 +31,21 @@ function decryptMessage(encryptedMessage) {
 }
 
 const sendMessage = asyncHandler(async (req, res) => {
-    const { content, chatId } = req.body;
+    const { content, media, chatId } = req.body;
 
-    if (!content || !chatId) {
+    if ((!content && !media) || !chatId) {
         console.log("Invalid data passed into request");
         return res.sendStatus(400);
     }
 
     // Encrypt the message content before saving
     const encryptedContent = encryptMessage(content);
+    const encryptedMedia = encryptMessage(media);
 
     var newMessage = {
         sender: req.user._id,
         content: encryptedContent,
+        media: encryptedMedia,
         chat: chatId
     };
 
@@ -52,7 +54,9 @@ const sendMessage = asyncHandler(async (req, res) => {
 
         // Decrypt the message content before sending the response
         const decryptedContent = decryptMessage(message.content);
+        const decryptedMedia = decryptMessage(message.media);
         message.content = decryptedContent;
+        message.media = decryptedMedia;
 
         message = await message.populate("sender", "name pic email");
         message = await message.populate("chat");
@@ -79,7 +83,9 @@ const allMessages = asyncHandler(async (req, res) => {
         // Decrypt the content of each message before sending the response
         const decryptedMessages = messages.map(message => {
             const decryptedContent = decryptMessage(message.content);
+            const decryptedMedia = decryptMessage(message.media);
             message.content = decryptedContent;
+            message.media = decryptedMedia;
             return message;
         });
 
