@@ -117,12 +117,17 @@ const deleteMessage = asyncHandler(async (req, res) => {
             select: '-password'
         }).populate({
             path: 'latestMessage',
-            select: 'sender content createdAt',
+            select: 'sender content media createdAt',
             populate: {
                 path: 'sender',
                 select: '-password'
             }
         });
+        const decryptedContent = decryptMessage(chat.latestMessage.content);
+        const decryptedMedia = decryptMessage(chat.latestMessage.media);
+        chat.latestMessage.content = decryptedContent;
+        chat.latestMessage.media = decryptedMedia;
+
         res.json({ success: true, chat });
     } catch (err) {
         res.status(400);

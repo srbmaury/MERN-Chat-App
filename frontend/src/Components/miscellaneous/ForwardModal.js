@@ -7,7 +7,7 @@ import { ChatState } from '../../Context/ChatProvider';
 
 const ENDPOINT = "http://localhost:5000";
 var socket;
-const ForwardModal = ({ children, content, media, messages, setMessages }) => {
+const ForwardModal = ({ children, content, media, messages, setMessages, forwardModalOpen, setForwardModalOpen }) => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const { user, chats, setChats, setNewLatestMessage } = ChatState();
     const toast = useToast();
@@ -54,9 +54,15 @@ const ForwardModal = ({ children, content, media, messages, setMessages }) => {
         }
         onClose();
     };
+    const handleClick = () => {
+        if (forwardModalOpen) {
+            onOpen();
+            setForwardModalOpen(false);
+        }
+    };
     return (
         <>
-            <span onClick={onOpen}>{children}</span>
+            <span onClick={handleClick}>{children}</span>
             <Modal isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay />
                 <ModalContent>

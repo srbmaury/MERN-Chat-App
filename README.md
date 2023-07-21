@@ -9,6 +9,7 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
 - **Email Verification:** User email addresses are verified during the registration process to ensure secure access to the app.
 - **Password Encryption:** User passwords are encrypted using bcryptjs to protect user data.
 - **Message Encryption:** Messages are encrypted using the `crypto` library for enhanced security.
+- **Sending Photos** Users can also send photos, that too in encrypted form.
 - **One-to-One and Group Chats:** Users can create both one-to-one and group chats to communicate with others.
 - **Message Management:** Users have the ability to delete or forward messages within the app.
 - **User Search:** Users can search for other users to initiate conversations with them.
@@ -16,6 +17,7 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
 - **Profile Picture:** Users can update their profile picture to personalize their account.
 - **Notifications:** Users receive notifications for new messages, ensuring they never miss important conversations.
 - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
+- **Delete Chats** Users can also delete a specific chat.
 
 ## Technologies Used
 

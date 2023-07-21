@@ -66,7 +66,7 @@ const Statuses = (props) => {
                 position: 'bottom-left',
             });
         }
-    }, [user, statuses, toast]);
+    }, [statuses]);
 
     const addStatus = async () => {
         try {
@@ -151,8 +151,9 @@ const Statuses = (props) => {
     };
 
     useEffect(() => {
-        fetchStatuses();
-    }, [props.isModalOpen, fetchStatuses]);
+        if(props.isModalOpen)
+            fetchStatuses();
+    }, [props.isModalOpen]);
 
     const [todisplayName, setTodisplayName] = useState('');
     const [todisplayPic, setTodisplayPic] = useState('');

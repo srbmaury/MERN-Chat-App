@@ -1,35 +1,25 @@
-import { Avatar, Image, Tooltip, useToast } from '@chakra-ui/react'
-import { DeleteIcon } from '@chakra-ui/icons'
-import React, { useEffect, useState } from 'react'
+import { Avatar, Image, MenuDivider, MenuItem, MenuList, Tooltip, useToast } from '@chakra-ui/react'
+import React, { useState, useEffect } from 'react'
 import ScrollableFeed from 'react-scrollable-feed'
 import { formatDate, isFirstMessageofDay, isLastMessage, isSameSender, isSameSenderMargin } from '../config/ChatLogics'
 import { ChatState } from '../Context/ChatProvider'
 import axios from 'axios'
 import io from 'socket.io-client';
-import { CgMailForward } from 'react-icons/cg';
 import ForwardModal from './miscellaneous/ForwardModal'
+import { ContextMenu } from 'chakra-ui-contextmenu'
 
 const ENDPOINT = "http://localhost:5000";
 var socket;
 
 const ScrollableChat = ({ messages, setMessages }) => {
     const { user, selectedChat } = ChatState();
-    const [currY, setCurrY] = useState(400);
-
+    const [forwardModalOpen, setForwardModalOpen] = useState(false);
     const toast = useToast();
 
     useEffect(() => {
         socket = io(ENDPOINT);
         socket.emit("setup", user);
     }, [user]);
-
-    const displayDeleteIcon = (id) => {
-        id = 'delete' + id;
-        const icon = document.getElementById(id);
-        icon.style.display === 'block' ?
-            icon.style.display = 'none' :
-            icon.style.display = 'block';
-    };
 
     const deleteMessage = async (message) => {
         const messageId = message._id;
@@ -64,13 +54,6 @@ const ScrollableChat = ({ messages, setMessages }) => {
         });
     });
 
-    useEffect(() => {
-        const mouseMoveEvent = (e) => {
-            setCurrY(e.clientY);
-        };
-        window.addEventListener('mousemove', mouseMoveEvent);
-    }, []);
-
     return (
         <ScrollableFeed>
             <>
@@ -93,119 +76,100 @@ const ScrollableChat = ({ messages, setMessages }) => {
                     </div>
                 }
                 {messages && messages.map((m, i) => (
-                    <span key={m._id}>
-                        {
-                            isFirstMessageofDay(messages, m, i) &&
-                            <div style={{ height: '40px' }}>
-                                <div
-                                    style={{
-                                        maxWidth: 'max-content',
-                                        height: '30px',
-                                        fontSize: '15px',
-                                        padding: '5px 10px',
-                                        borderRadius: '7px',
-                                        backgroundColor: 'rgb(219, 219, 244)',
-                                        textAlign: 'center',
-                                        margin: '10px auto'
-                                    }}
-                                >
-                                    {formatDate(m.createdAt.toString())}
-                                </div>
-                            </div>
-                        }
-                        {m.sender._id === user._id &&
-                            <DeleteIcon
-                                color='red'
-                                cursor='pointer'
-                                marginTop={5}
-                                float='right' display={'none'} id={`delete${m._id}`}
-                                onClick={() => deleteMessage(m)}
-                            />
-                        }
-                        <div style={{ display: 'flex' }}>
+                    <ForwardModal content={m.content} media={m.media} messages={messages} setMessages={setMessages} forwardModalOpen={forwardModalOpen} setForwardModalOpen={setForwardModalOpen}>
+                        <span key={m._id}>
                             {
-                                (isSameSender(messages, m, i, user._id)
-                                    || isLastMessage(messages, i, user._id)
-                                ) && (
-                                    <Tooltip
-                                        label={m.sender.name}
-                                        placement="bottom-start"
-                                        hasArrow
+                                isFirstMessageofDay(messages, m, i) &&
+                                <div style={{ height: '40px' }}>
+                                    <div
+                                        style={{
+                                            maxWidth: 'max-content',
+                                            height: '30px',
+                                            fontSize: '15px',
+                                            padding: '5px 10px',
+                                            borderRadius: '7px',
+                                            backgroundColor: 'rgb(219, 219, 244)',
+                                            textAlign: 'center',
+                                            margin: '10px auto'
+                                        }}
                                     >
-                                        <Avatar
-                                            mt="7px"
-                                            mr={1}
-                                            size="sm"
-                                            cursor="pointer"
-                                            name={m.sender.name}
-                                            src={m.sender.pic}
-                                        />
-                                    </Tooltip>
-                                )
+                                        {formatDate(m.createdAt.toString())}
+                                    </div>
+                                </div>
                             }
-                            <span id={`span${m._id}`}
-                                style={{
-                                    backgroundColor: `${m.sender._id === user._id ? "#BEE3F8" : "#B9F5D0"}`,
-                                    borderRadius: "20px",
-                                    padding: "5px 15px",
-                                    maxWidth: m.media ? 200 : "75%",
-                                    marginLeft: isSameSenderMargin(messages, m, i, user._id),
-                                    marginTop: (isSameSender(messages, m, i) ? 3 : 10),
-                                    left: 0,
-                                    display: 'inline-block',
-                                }}
-                                onDoubleClick={() => displayDeleteIcon(m._id)}
-                            >
-                                <ForwardModal content={m.content} media={m.media} messages={messages} setMessages={setMessages}>
-                                    {
-                                        document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
-                                        <span style={{
-                                            position: 'absolute',
-                                            marginLeft: '-44px',
-                                            marginTop: m.media && 100,
-                                            cursor: 'pointer',
-                                            fontSize: '30px',
-                                            top: document.getElementById(`span${m._id}`).getBoundingClientRect().top
-                                        }}
+                            <div style={{ display: 'flex' }}>
+                                {
+                                    (isSameSender(messages, m, i, user._id)
+                                        || isLastMessage(messages, i, user._id)
+                                    ) && (
+                                        <Tooltip
+                                            label={m.sender.name}
+                                            placement="bottom-start"
+                                            hasArrow
                                         >
-                                            {
-                                                m.sender._id === user._id &&
-                                                <CgMailForward />
-                                            }
-                                        </span>
-                                    }
-                                </ForwardModal>
-                                {m.media && <Image src={m.media} boxSize={200} alt="Image" />}
-                                {m.content && m.content}
-                                <ForwardModal content={m.content} media={m.media} messages={messages} setMessages={setMessages}>
+                                            <Avatar
+                                                mt="7px"
+                                                mr={1}
+                                                size="sm"
+                                                cursor="pointer"
+                                                name={m.sender.name}
+                                                src={m.sender.pic}
+                                            />
+                                        </Tooltip>
+                                    )
+                                }
+                                <ContextMenu
+                                    key={m._id}
+                                    renderMenu={() => (
+                                        <MenuList>
+                                            <MenuItem onClick={() => setForwardModalOpen(true)}>
+                                                Forward
+                                            </MenuItem>
+                                            {m.sender._id === user._id && <span><MenuDivider />
+                                                <MenuItem>
+                                                    <div
+                                                        id={`d${m._id}`}
+                                                        onClick={() => deleteMessage(m)}
+                                                    >
+                                                        Delete
+                                                    </div>
+                                                </MenuItem>
+                                            </span>}
+                                        </MenuList>
+                                    )}
+                                >
                                     {
-                                        document.getElementById(`span${m._id}`) && currY >= document.getElementById(`span${m._id}`).getBoundingClientRect().top && currY <= document.getElementById(`span${m._id}`).getBoundingClientRect().bottom &&
-                                        <span style={{
-                                            position: 'absolute',
-                                            marginLeft: m.media ? 188 : '44px',
-                                            marginTop: m.media && 100,
-                                            cursor: 'pointer',
-                                            fontSize: '30px',
-                                            top: document.getElementById(`span${m._id}`).getBoundingClientRect().top
-                                        }}
-                                        >
-                                            {
-                                                m.sender._id !== user._id &&
-                                                <CgMailForward />
-                                            }
-                                        </span>
+                                        ref =>
+                                            <span id={`span${m._id}`}
+                                                style={{
+                                                    backgroundColor: `${m.sender._id === user._id ? "#BEE3F8" : "#B9F5D0"}`,
+                                                    borderRadius: "20px",
+                                                    padding: "5px 15px",
+                                                    maxWidth: m.media ? 200 : "75%",
+                                                    marginLeft: isSameSenderMargin(messages, m, i, user._id),
+                                                    marginTop: (isSameSender(messages, m, i) ? 3 : 10),
+                                                    left: 0,
+                                                    display: 'inline-block',
+                                                }}
+                                                onContextMenu={e => e.preventDefault()}
+                                                ref={ref}
+                                            >
+                                                {m.media && <Image src={m.media} boxSize={200} alt="Image" />}
+                                                {m.content && m.content}
+                                                <span
+                                                    style={{ fontSize: '10px', marginLeft: '4px', color: '#555' }}>
+                                                    {m.createdAt.toString().slice(11, 16)}
+                                                </span>
+                                            </span>
                                     }
-                                </ForwardModal>
-                                <span
-                                    style={{ fontSize: '10px', marginLeft: '4px', color: '#555' }}>
-                                    {m.createdAt.toString().slice(11, 16)}
-                                </span>
-                            </span>
-                        </div>
-                    </span>
-                ))}
+                                </ContextMenu>
+                            </div>
+                        </span>
+                    </ForwardModal>
+                ))
+                }
             </>
-        </ScrollableFeed>
+        </ScrollableFeed >
     )
 }
 
