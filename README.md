@@ -18,6 +18,7 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
 - **Notifications:** Users receive notifications for new messages, ensuring they never miss important conversations.
 - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
 - **Delete Chats** Users can also delete a specific chat.
+- **Reset Password** Users can reset their account password if they forget.
 
 ## Technologies Used
 
@@ -41,7 +42,7 @@ The MERN Stack Chat App is built using the following technologies:
 - **nodemailer:** A module for sending emails using Node.js.
 - **react-overflow:** A React component for handling overflow content.
 - **Cloudinary:** A clod-based media-management platform.
-
+- **node-cron** A cron-like task scheduler for nodeJS.
 ## Installation
 
 To run the MERN Stack Chat App locally, follow these steps:
@@ -51,20 +52,30 @@ To run the MERN Stack Chat App locally, follow these steps:
 3. Install the backend dependencies: `npm install`
 4. Install the frontend dependencies: `cd frontend` then `npm install`
 5. Create a `.env` file in the root directory with the following environment variables:
-
+- For Connection to MongoDB and Login
 ```plaintext
 PORT=3000
 MONGO_URI=your-mongodb-connection-string
 JWT_SECRET=your-jwt-secret
+````
+- For Sending Email
+```
 ENCRYPTION_KEY=your-encryption-key
 CLIENT_ID=your-client-id
 CLIENT_SECRET=your-client-secret
 REFRESH_TOKEN=your-refresh-token
 EMAIL_ID=your-email-id
+```
+- For Working with Photos
+```
 CLOUD_NAME=your-cloudinary-cloud-name
 API_KEY=your-cloudinary-api-key
 API_SECRET=your-cloudinary-api-secret
 UPLOAD_PRESET=cloudinary-upload-preset
+```
+- For Otp During Password Reset
+```
+OTP_EXPIRATION_TIME_SECONDS = 600
 ```
 
 Make sure to replace the placeholder values (`your-mongodb-connection-string`, `your-jwt-secret`, etc.) with the actual values specific to your environment and setup.

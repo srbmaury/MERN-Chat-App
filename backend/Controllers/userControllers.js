@@ -62,7 +62,6 @@ const sendVerificationEmail = async (email, verificationToken) => {
 
         await transporter.sendMail(mailOptions);
 
-        return verificationToken;
     } catch (error) {
         throw new Error("Failed to send verification email");
     }

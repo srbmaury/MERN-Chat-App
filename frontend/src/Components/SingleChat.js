@@ -117,7 +117,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
 
     const sendMessage = async event => {
-        console.log(newMessage, media);
         if (newMessage || media) {
             socket.emit('stop typing', selectedChat._id);
             try {
@@ -237,7 +236,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 <ScrollableChat messages={messages} setMessages={setMessages} />
                             </div>
                         )}
-                        {media != "" &&
+                        {media !== "" &&
                             <Box
                                 width="100%"
                                 height="70px"

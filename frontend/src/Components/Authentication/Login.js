@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useToast } from '@chakra-ui/react';
 import { useHistory } from 'react-router-dom';
 import { ChatState } from '../../Context/ChatProvider';
-
+import { Box, Text } from "@chakra-ui/react"
 const Login = () => {
     const [show, setShow] = useState(false);
     const handleClick = () => setShow(!show);
@@ -17,7 +17,7 @@ const Login = () => {
 
     const history = useHistory();
     const toast = useToast();
-    
+
     const { setUser } = ChatState();
 
     const submitHandler = async () => {
@@ -39,13 +39,13 @@ const Login = () => {
                     "Content-type": "application/json",
                 },
             };
-          
+
             const { data } = await axios.post(
                 "/api/user/login",
                 { email, password },
                 config
             );
-            
+
             toast({
                 title: "Login Successful",
                 status: "success",
@@ -57,7 +57,7 @@ const Login = () => {
             setUser(data);
             setLoading(false);
             history.push("/chats");
-        }catch (error) {
+        } catch (error) {
             toast({
                 title: "Error Occured!",
                 description: error.response.data.message,
@@ -68,7 +68,7 @@ const Login = () => {
             });
             setLoading(false);
         }
-      };
+    };
 
     return (
         <VStack spacing="10px">
@@ -82,7 +82,16 @@ const Login = () => {
                 />
             </FormControl>
             <FormControl id="login-password" isRequired>
-                <FormLabel>Password</FormLabel>
+                <Box display="flex" justifyContent="space-between">
+                    <FormLabel>Password</FormLabel>
+                    <Text
+                        color="blue"
+                        cursor="pointer"
+                        onClick={() => history.push('/forgot-password')}
+                    >
+                        Forgot Password
+                    </Text>
+                </Box>
                 <InputGroup size="md">
                     <Input
                         value={password}
