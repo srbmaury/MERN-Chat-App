@@ -6,25 +6,37 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
 ![One-to-one Chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690005398/uploads/11fdf0aed2dea50d256e02077187532e_sq3ixw.png)
 
 ## Group Chat
-![Group Chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690005371/uploads/3a9bc13088daea7424943d52f860c91e_nnnbky.png)
+![Group Chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690032073/uploads/982336d62a5fbe9ec080f49f38c5e760_hyzxmw.png)
 
 ## Features
 
-- **Email Verification:** User email addresses are verified during the registration process to ensure secure access to the app.
-- **Password Encryption:** User passwords are encrypted using bcryptjs to protect user data.
-- **Message Encryption:** Messages are encrypted using the `crypto` library for enhanced security.
-- **Sending Photos** Users can also send photos, that too in encrypted form.
-- **One-to-One and Group Chats:** Users can create both one-to-one and group chats to communicate with others.
-- **Message Management:** Users have the ability to delete or forward messages within the app.
-- **User Search:** Users can search for other users to initiate conversations with them.
-- **Status Updates:** Users can update their status with photo and caption which expires after 24 hours.
-- **Profile Picture:** Users can update their profile picture to personalize their account.
-- **Notifications:** Users receive notifications for new messages, ensuring they never miss important conversations.
-- **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
-- **Delete Chats** Users can also delete a specific chat.
-- **Chat Wallpaper** Users can update wallpaper of a particular chat or all at once.
-- **Reset Password** Users can reset their account password if they forget.
+- **Security:**
+  - **Email Verification:** User email addresses are verified during the registration process to ensure secure access to the app.
+  - **Password Encryption:** User passwords are encrypted using bcryptjs to protect user data.
+  - **Message Encryption:** Messages are encrypted using the `crypto` library for enhanced security.
+  - **Sending Photos:** Users can also send photos, that too in encrypted form.
 
+- **Chat Features:**
+  - **One-to-One and Group Chats:** Users can create both one-to-one and group chats to communicate with others.
+  - **Group Admin Privileges:** In group chats, designated group admins have full control to add or remove members from the group.
+  - **Group Name Customization:** While group admins have additional powers, all members can actively participate in the group by having the ability to change the group name. 
+  - **Typing Indicator:** Users can see real-time typing indicators in chats, showing when others are composing messages.
+  - **Message Forwarding:** Users have the ability to delete or forward messages within the app.
+  - **Reply to Messages:** Users can reply to particular messages within the chat and can traverse to the tagged message.
+  - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
+  - **Delete Chats:** Users can also delete a specific chat.
+  - **Chat Wallpaper:** Users can update the wallpaper of a particular chat or all at once.
+
+- **User Profile:**
+  - **User Search:** Users can search for other users to initiate conversations with them.
+  - **Status Updates:** Users can update their status with a photo and caption which expires after 24 hours.
+  - **Profile Picture:** Users can update their profile picture to personalize their account.
+
+- **Notifications and Account Management:**
+  - **Notifications:** Users receive notifications for new messages, ensuring they never miss important conversations.
+  - **Reset Password:** Users can reset their account password if they forget.
+
+- Chron Job is being used to remove expired statuses and otps.   
 ## Technologies Used
 
 The MERN Stack Chat App is built using the following technologies:

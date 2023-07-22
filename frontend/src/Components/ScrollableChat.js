@@ -1,4 +1,4 @@
-import { Avatar, Image, MenuDivider, MenuItem, MenuList, Tooltip, useToast } from '@chakra-ui/react'
+import { Avatar, Box, Image, MenuDivider, MenuItem, MenuList, Text, Tooltip, useToast } from '@chakra-ui/react'
 import React, { useState, useEffect } from 'react'
 import ScrollableFeed from 'react-scrollable-feed'
 import { formatDate, isFirstMessageofDay, isLastMessage, isSameSender, isSameSenderMargin } from '../config/ChatLogics'
@@ -7,11 +7,12 @@ import axios from 'axios'
 import io from 'socket.io-client';
 import ForwardModal from './miscellaneous/ForwardModal'
 import { ContextMenu } from 'chakra-ui-contextmenu'
+import '../App.css'
 
 const ENDPOINT = "http://localhost:5000";
 var socket;
 
-const ScrollableChat = ({ messages, setMessages }) => {
+const ScrollableChat = ({ messages, setMessages, setMessageToReply }) => {
     const { user, selectedChat } = ChatState();
     const [forwardModalOpen, setForwardModalOpen] = useState(false);
     const toast = useToast();
@@ -54,6 +55,20 @@ const ScrollableChat = ({ messages, setMessages }) => {
         });
     });
 
+    const scroll = (id) => {
+        const targetSpan = document.getElementById(id);
+        if (targetSpan) {
+            targetSpan.scrollIntoView({ behavior: 'smooth' });
+            targetSpan.parentElement.style.backgroundColor = '#D3D3D3';
+            targetSpan.parentElement.style.borderRadius = '15px';
+
+            setTimeout(function () {
+                targetSpan.parentElement.style.backgroundColor = '';
+                targetSpan.parentElement.style.borderRadius = '';
+            }, 2000);
+        }
+    }
+
     return (
         <ScrollableFeed>
             <>
@@ -75,6 +90,7 @@ const ScrollableChat = ({ messages, setMessages }) => {
                         </div>
                     </div>
                 }
+
                 {messages && messages.map((m, i) => (
                     <ForwardModal key={m._id} content={m.content} media={m.media} messages={messages} setMessages={setMessages} forwardModalOpen={forwardModalOpen} setForwardModalOpen={setForwardModalOpen}>
                         <span key={m._id}>
@@ -122,6 +138,10 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                     key={m._id}
                                     renderMenu={() => (
                                         <MenuList>
+                                            <MenuItem onClick={() => setMessageToReply(m)}>
+                                                Reply
+                                            </MenuItem>
+                                            <MenuDivider />
                                             <MenuItem onClick={() => setForwardModalOpen(true)}>
                                                 Forward
                                             </MenuItem>
@@ -154,6 +174,34 @@ const ScrollableChat = ({ messages, setMessages }) => {
                                                 onContextMenu={e => e.preventDefault()}
                                                 ref={ref}
                                             >
+
+                                                {m.isReplyTo && (
+                                                    <Box
+                                                        onClick={() => scroll(`span${m.isReplyTo._id}`)}
+                                                        style={{
+                                                            display: "flex",
+                                                            flexDirection: "row",
+                                                            alignItems: "center",
+                                                            borderLeft: "3px solid #ccc",
+                                                            backgroundColor: user && m.isReplyTo.sender !== user._id ? "#DDFFE8" : "#C4E6F9",
+                                                            paddingLeft: "10px",
+                                                            cursor: "pointer",
+                                                            borderRadius: "5px"
+                                                        }}
+                                                    >
+                                                        {m.isReplyTo.media !== "" && (
+                                                            <Avatar src={m.isReplyTo.media} marginRight={3} />
+                                                        )}
+                                                        <Text
+                                                            margin={2}
+                                                        >
+                                                            {m.isReplyTo.content ? (m.isReplyTo.content.length > 50
+                                                                ? m.isReplyTo.content.slice(0, 47) + "..."
+                                                                : m.isReplyTo.content)
+                                                                : "Image"}
+                                                        </Text>
+                                                    </Box>
+                                                )}
                                                 {m.media && <Image src={m.media} boxSize={200} alt="Image" />}
                                                 {m.content && m.content}
                                                 <span

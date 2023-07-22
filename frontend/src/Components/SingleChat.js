@@ -3,6 +3,7 @@ import { ChatState } from '../Context/ChatProvider';
 import {
     Box,
     CircularProgress,
+    CloseButton,
     FormControl,
     IconButton,
     Image,
@@ -39,9 +40,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const [socketConnected, setSocketConnected] = useState(false);
     const [typing, setTyping] = useState(false);
     const [istyping, setIsTyping] = useState(false);
-    const [media, setMedia] = useState('');
+    const [media, setMedia] = useState();
     const [changeWallpaperDisplay, setChangeWallpaperDisplay] = useState(false);
     const [wallPaper, setWallPaper] = useState();
+    const [messageToReply, setMessageToReply] = useState();
 
     const toast = useToast();
 
@@ -55,6 +57,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     };
 
     const { user, selectedChat, setSelectedChat, notification, setNotification, setNewLatestMessage } = ChatState();
+
+    useEffect(() => {
+        setMessageToReply();
+        setMedia();
+    }, [selectedChat]);
 
     const fetchMessages = useCallback(async () => {
         if (!selectedChat) return;
@@ -76,9 +83,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
             socket.emit('join chat', selectedChat._id);
         } catch (error) {
+            console.log(error);
             toast({
                 title: 'Error Occured!',
-                description: 'Failed to load the Messages',
+                description: error.response.data.message,
                 status: 'error',
                 duration: 5000,
                 isClosable: true,
@@ -106,7 +114,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 }
             });
         }
-    }, [selectedChat, fetchMessages]);
+    }, [user._id, selectedChat, fetchMessages]);
 
     useEffect(() => {
         socket.on('message received', (newMessageReceived) => {
@@ -140,13 +148,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 };
 
                 setNewMessage('');
-                setMedia('');
+                setMedia();
+                setMessageToReply()
                 const { data } = await axios.post(
                     '/api/message',
                     {
                         content: newMessage,
                         chatId: selectedChat._id,
                         media: media,
+                        messageId: messageToReply && messageToReply._id
                     },
                     config
                 );
@@ -192,7 +202,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
     const changeWallpaper = async (e) => {
         e.preventDefault();
-        if(e.target.tagName === 'DIV')
+        if (e.target.tagName === 'DIV')
             setChangeWallpaperDisplay(true);
     }
     return (
@@ -255,10 +265,50 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                             />
                         ) : (
                             <div className='messages'>
-                                <ScrollableChat messages={messages} setMessages={setMessages} />
+                                <ScrollableChat messages={messages} setMessages={setMessages} messageToReply={messageToReply} setMessageToReply={setMessageToReply} />
                             </div>
                         )}
-                        {media !== "" &&
+                        {messageToReply &&
+                            <Box
+                                width="100%"
+                                height="70px"
+                                borderRadius="10px"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="space-between"
+                                backgroundColor="blue.500"
+                                padding="5px"
+                            >
+                                <span
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "flex-start",
+                                    }}
+                                >
+                                    {messageToReply.media && messageToReply.media !== "" &&
+                                        <Image
+                                            src={messageToReply.media}
+                                            boxSize="60px"
+                                            borderRadius="50%"
+                                            marginRight="10px" />}
+                                    {messageToReply.content && messageToReply.content !== "" ?
+                                        <Text
+                                            fontSize={20}
+                                            color="white"
+                                        >
+                                            {messageToReply.content.length > 50 ? messageToReply.content.slice(0, 47) + "..." : messageToReply.content}
+                                        </Text> : "Image"}
+                                </span>
+                                <CloseButton
+                                    size="sm"
+                                    top="5px"
+                                    right="5px"
+                                    float="right"
+                                    onClick={() => setMessageToReply()}
+                                />
+                            </Box>
+                        }
+                        {media &&
                             <Box
                                 width="100%"
                                 height="70px"

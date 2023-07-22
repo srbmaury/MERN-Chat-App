@@ -76,8 +76,6 @@ const io = require('socket.io')(server, {
 });
 
 io.on("connection", (socket) => {
-    console.log("Connected to socket.io");
-
     socket.on('setup', (userData) => {
         socket.join(userData._id);
         socket.emit("connected");

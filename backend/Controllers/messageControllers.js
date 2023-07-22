@@ -31,8 +31,7 @@ function decryptMessage(encryptedMessage) {
 }
 
 const sendMessage = asyncHandler(async (req, res) => {
-    const { content, media, chatId } = req.body;
-
+    const { content, media, chatId, messageId } = req.body;
     if ((!content && !media) || !chatId) {
         console.log("Invalid data passed into request");
         return res.sendStatus(400);
@@ -46,6 +45,7 @@ const sendMessage = asyncHandler(async (req, res) => {
         sender: req.user._id,
         content: encryptedContent,
         media: encryptedMedia,
+        isReplyTo: messageId,
         chat: chatId
     };
 
@@ -59,11 +59,20 @@ const sendMessage = asyncHandler(async (req, res) => {
         message.media = decryptedMedia;
 
         message = await message.populate("sender", "name pic email");
+        message = await message.populate("isReplyTo");
+        message = await message.populate("isReplyTo.sender", "name pic");
         message = await message.populate("chat");
         message = await User.populate(message, {
             path: "chat.users",
             select: "name pic email"
         });
+
+        if (message.isReplyTo) {
+            let replyMsg = await Message.findById(message.isReplyTo);
+            replyMsg.content = decryptMessage(replyMsg.content);
+            replyMsg.media = decryptMessage(replyMsg.media);
+            message.isReplyTo = replyMsg;
+        }
 
         await Chat.findByIdAndUpdate(req.body.chatId, {
             latestMessage: message
@@ -78,12 +87,19 @@ const sendMessage = asyncHandler(async (req, res) => {
 
 const allMessages = asyncHandler(async (req, res) => {
     try {
-        const messages = await Message.find({ chat: req.params.chatId }).populate("sender", "name pic email").populate("chat");
-
+        let messages = await Message.find({ chat: req.params.chatId }).populate("sender", "name pic email").populate("chat").populate("isReplyTo");
         // Decrypt the content of each message before sending the response
         const decryptedMessages = messages.map(message => {
             const decryptedContent = decryptMessage(message.content);
             const decryptedMedia = decryptMessage(message.media);
+            if (message.isReplyTo) {
+                const replyMessage = message.isReplyTo.toObject();
+                if (replyMessage.content)
+                    replyMessage.content = decryptMessage(replyMessage.content);
+                if (replyMessage.media)
+                    replyMessage.media = decryptMessage(replyMessage.media);
+                message.isReplyTo = replyMessage;
+            }
             message.content = decryptedContent;
             message.media = decryptedMedia;
             return message;
@@ -123,10 +139,12 @@ const deleteMessage = asyncHandler(async (req, res) => {
                 select: '-password'
             }
         });
-        const decryptedContent = decryptMessage(chat.latestMessage.content);
-        const decryptedMedia = decryptMessage(chat.latestMessage.media);
-        chat.latestMessage.content = decryptedContent;
-        chat.latestMessage.media = decryptedMedia;
+        if (messages.length > 0) {
+            const decryptedContent = decryptMessage(chat.latestMessage.content);
+            const decryptedMedia = decryptMessage(chat.latestMessage.media);
+            chat.latestMessage.content = decryptedContent;
+            chat.latestMessage.media = decryptedMedia;
+        }
 
         res.json({ success: true, chat });
     } catch (err) {
