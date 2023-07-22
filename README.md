@@ -1,9 +1,12 @@
 # MERN Stack Chat App
 
-![One-to-one Chat](https://github.com/srbmaury/MERN-Chat-App/blob/master/frontend/public/one-to-one-chat.png)
-![Group Chat](https://github.com/srbmaury/MERN-Chat-App/blob/master/frontend/public/group-chat.png)
-
 Welcome to the MERN Stack Chat App! This application allows users to securely communicate with others through one-to-one or group chats. With features like email verification, password encryption, message forwarding, and more, the MERN Stack Chat App ensures a safe and seamless chatting experience.
+
+## One-to-one Chat
+![One-to-one Chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690005398/uploads/11fdf0aed2dea50d256e02077187532e_sq3ixw.png)
+
+## Group Chat
+![Group Chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690005371/uploads/3a9bc13088daea7424943d52f860c91e_nnnbky.png)
 
 ## Features
 
