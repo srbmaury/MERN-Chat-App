@@ -26,6 +26,7 @@ import Lottie from 'react-lottie';
 import { IoMdSend } from 'react-icons/io';
 import { GrAttachment } from 'react-icons/gr';
 import Upload from './miscellaneous/Cloudinary';
+import ChangeWallpaper from './ChangeWallpaper';
 
 const ENDPOINT = "http://localhost:5000";
 var socket, selectedChatCompare;
@@ -39,6 +40,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const [typing, setTyping] = useState(false);
     const [istyping, setIsTyping] = useState(false);
     const [media, setMedia] = useState('');
+    const [changeWallpaperDisplay, setChangeWallpaperDisplay] = useState(false);
+    const [wallPaper, setWallPaper] = useState();
+
     const toast = useToast();
 
     const defaultOptions = {
@@ -94,6 +98,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     useEffect(() => {
         fetchMessages();
         selectedChatCompare = selectedChat;
+        if (selectedChat) {
+            selectedChat.wallPaper.forEach(w => {
+                if (w.userId === user._id) {
+                    setWallPaper(w.wallpaperUrl);
+                    return;
+                }
+            });
+        }
     }, [selectedChat, fetchMessages]);
 
     useEffect(() => {
@@ -178,8 +190,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         }, timerLength);
     };
 
+    const changeWallpaper = async (e) => {
+        e.preventDefault();
+        if(e.target.tagName === 'DIV')
+            setChangeWallpaperDisplay(true);
+    }
     return (
         <>
+            {changeWallpaperDisplay && <ChangeWallpaper setChangeWallpaperDisplay={setChangeWallpaperDisplay} setWallPaper={setWallPaper} chatId={selectedChat._id} />}
+
             {selectedChat ? (
                 <>
                     <Text
@@ -217,11 +236,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         flexDir="column"
                         justifyContent={'flex-end'}
                         padding={3}
-                        bg="#E8E8E8"
+                        bg={wallPaper && wallPaper.startsWith('#') ? wallPaper : '#E0E0E0'}
+                        backgroundImage={wallPaper && !wallPaper.startsWith('#') ? `url(${wallPaper})` : 'none'}
+                        backgroundSize="cover"
                         width={'100%'}
                         height={'100%'}
                         borderRadius="lg"
                         overflowY={'hidden'}
+                        onContextMenu={e => changeWallpaper(e)}
                     >
                         {loading ? (
                             <Spinner

@@ -170,8 +170,10 @@ const allUsers = asyncHandler(async (req, res) => {
 });
 
 const updateProfilePicture = asyncHandler(async (req, res) => {
+    console.log(req.body.pic);
     try {
         const user = await User.findByIdAndUpdate(req.body.id, { pic: req.body.pic }, { new: true });
+        console.log(user);
         res.status(201).json({
             _id: user._id,
             name: user.name,

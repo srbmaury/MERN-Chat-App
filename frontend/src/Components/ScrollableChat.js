@@ -76,7 +76,7 @@ const ScrollableChat = ({ messages, setMessages }) => {
                     </div>
                 }
                 {messages && messages.map((m, i) => (
-                    <ForwardModal content={m.content} media={m.media} messages={messages} setMessages={setMessages} forwardModalOpen={forwardModalOpen} setForwardModalOpen={setForwardModalOpen}>
+                    <ForwardModal key={m._id} content={m.content} media={m.media} messages={messages} setMessages={setMessages} forwardModalOpen={forwardModalOpen} setForwardModalOpen={setForwardModalOpen}>
                         <span key={m._id}>
                             {
                                 isFirstMessageofDay(messages, m, i) &&

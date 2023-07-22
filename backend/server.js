@@ -6,6 +6,7 @@ const chatRoutes = require('./Routes/chatRoutes');
 const messageRoutes = require('./Routes/messageRoutes');
 const statusRoutes = require('./Routes/statusRoutes');
 const otpRoutes = require('./Routes/otpRoutes');
+const unsplashRoutes = require('./Routes/unsplashRoutes');
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const cloudinary = require('cloudinary').v2;
 const multer = require("multer");
@@ -27,6 +28,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/message', messageRoutes);
 app.use('/api/status', statusRoutes);
 app.use('/api/otp', otpRoutes);
+app.use('/api/unsplash', unsplashRoutes);
 
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,

@@ -77,7 +77,7 @@ const fetchChats = asyncHandler(async (req, res) => {
                     select: "name pic email",
                 });
                 results.forEach((x) => {
-                    if (x.latestMessage){
+                    if (x.latestMessage) {
                         x.latestMessage.content = decryptMessage(x.latestMessage.content);
                         x.latestMessage.media = decryptMessage(x.latestMessage.media);
                     }
@@ -223,4 +223,60 @@ const mutedChats = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { accessChat, fetchChats, createGroupChat, renameGroup, addToGroup, removeFromGroup, deleteChat, muteChat, mutedChats };
+const updateWallpaper = asyncHandler(async (req, res) => {
+    const { chatId } = req.params;
+    const { userId, wallpaperUrl } = req.body;
+
+    try {
+        const chat = await Chat.findById(chatId);
+
+        if (!chat) {
+            return res.status(404).json({ error: 'Chat not found' });
+        }
+
+        const userWallpaperIndex = chat.wallPaper.findIndex(
+            (wallpaper) => String(wallpaper.userId) === String(req.user._id)
+        );
+
+        if (userWallpaperIndex !== -1) {
+            chat.wallPaper[userWallpaperIndex].wallpaperUrl = wallpaperUrl;
+        } else {
+            chat.wallPaper.push({ userId: req.user._id, wallpaperUrl });
+        }
+
+        await chat.save();
+
+        res.json({ message: 'Wallpaper updated successfully', chat });
+    } catch (error) {
+        console.error('Error updating wallpaper:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+const updateWallpaperForAllChats = asyncHandler(async (req, res) => {
+    const { wallpaperUrl } = req.body;
+    try {
+        const chats = await Chat.find({ users: { $elemMatch: { $eq: req.user._id } } });
+
+        for (const chat of chats) {
+            const userWallpaperIndex = chat.wallPaper.findIndex(
+                (wallpaper) => String(wallpaper.userId) === String(req.user._id)
+            );
+
+            if (userWallpaperIndex !== -1) {
+                chat.wallPaper[userWallpaperIndex].wallpaperUrl = wallpaperUrl;
+            } else {
+                chat.wallPaper.push({ userId: req.user._id, wallpaperUrl });
+            }
+
+            await chat.save();
+        }
+
+        res.json({ message: 'Wallpaper updated for all chats successfully' });
+    } catch (error) {
+        console.error('Error updating wallpaper for all chats:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+module.exports = { accessChat, fetchChats, createGroupChat, renameGroup, addToGroup, removeFromGroup, deleteChat, muteChat, mutedChats, updateWallpaper, updateWallpaperForAllChats };

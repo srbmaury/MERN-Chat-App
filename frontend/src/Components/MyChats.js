@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, MenuDivider, MenuItem, MenuList, Stack, Text, useToast } from '@chakra-ui/react';
+import { Avatar, Box, Button, MenuDivider, MenuItem, MenuList, Stack, useToast } from '@chakra-ui/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import axios from 'axios';

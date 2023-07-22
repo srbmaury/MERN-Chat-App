@@ -1,6 +1,7 @@
 # MERN Stack Chat App
 
-![MERN Stack Chat App](https://github.com/srbmaury/MERN-Chat-App/blob/master/frontend/public/preview.png)
+![One-to-one Chat](https://github.com/srbmaury/MERN-Chat-App/blob/master/frontend/public/one-to-one-chat.png)
+![Group Chat](https://github.com/srbmaury/MERN-Chat-App/blob/master/frontend/public/group-chat.png)
 
 Welcome to the MERN Stack Chat App! This application allows users to securely communicate with others through one-to-one or group chats. With features like email verification, password encryption, message forwarding, and more, the MERN Stack Chat App ensures a safe and seamless chatting experience.
 
@@ -13,11 +14,12 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
 - **One-to-One and Group Chats:** Users can create both one-to-one and group chats to communicate with others.
 - **Message Management:** Users have the ability to delete or forward messages within the app.
 - **User Search:** Users can search for other users to initiate conversations with them.
-- **Status Updates:** Users can update their status to let others know their availability or any important information.
+- **Status Updates:** Users can update their status with photo and caption which expires after 24 hours.
 - **Profile Picture:** Users can update their profile picture to personalize their account.
 - **Notifications:** Users receive notifications for new messages, ensuring they never miss important conversations.
 - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
 - **Delete Chats** Users can also delete a specific chat.
+- **Chat Wallpaper** Users can update wallpaper of a particular chat or all at once.
 - **Reset Password** Users can reset their account password if they forget.
 
 ## Technologies Used
@@ -77,7 +79,10 @@ UPLOAD_PRESET=cloudinary-upload-preset
 ```
 OTP_EXPIRATION_TIME_SECONDS = 600
 ```
-
+- For Searching Photos for Wallpaper
+```
+UNSPLASH_ACCESS_KEY=your-unsplash-access-key
+```
 Make sure to replace the placeholder values (`your-mongodb-connection-string`, `your-jwt-secret`, etc.) with the actual values specific to your environment and setup.
 
 Made with ❤️ by [srbmaury](https://github.com/srbmaury)
