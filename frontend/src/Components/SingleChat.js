@@ -1,14 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import {
     Box,
     CircularProgress,
     CloseButton,
     FormControl,
+    Icon,
     IconButton,
     Image,
     Input,
     InputGroup,
+    InputLeftAddon,
+    InputLeftElement,
     InputRightElement,
     Spinner,
     Text,
@@ -21,13 +24,14 @@ import UpdateGroupChatModal from './miscellaneous/UpdateGroupChatModal';
 import axios from 'axios';
 import ScrollableChat from './ScrollableChat';
 import animationData from '../animations/typing.json'
-
 import io from 'socket.io-client';
 import Lottie from 'react-lottie';
 import { IoMdSend } from 'react-icons/io';
 import { GrAttachment } from 'react-icons/gr';
 import Upload from './miscellaneous/Cloudinary';
 import ChangeWallpaper from './ChangeWallpaper';
+import EmojiPicker from './EmojiPicker';
+import { FaSmile } from 'react-icons/fa';
 
 const ENDPOINT = "http://localhost:5000";
 var socket, selectedChatCompare;
@@ -40,12 +44,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const [socketConnected, setSocketConnected] = useState(false);
     const [typing, setTyping] = useState(false);
     const [istyping, setIsTyping] = useState(false);
-    const [media, setMedia] = useState();
+    const [media, setMedia] = useState('');
     const [changeWallpaperDisplay, setChangeWallpaperDisplay] = useState(false);
     const [wallPaper, setWallPaper] = useState();
-    const [messageToReply, setMessageToReply] = useState();
-
+    const [messageToReply, setMessageToReply] = useState('');
+    const [emojiDisplay, setEmojiDisplay] = useState(false);
     const toast = useToast();
+    const inputRef = useRef(null);
 
     const defaultOptions = {
         loop: true,
@@ -146,10 +151,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         Authorization: `Bearer ${user.token}`,
                     },
                 };
-
                 setNewMessage('');
-                setMedia();
-                setMessageToReply()
+                setMedia('');
+                setMessageToReply('');
                 const { data } = await axios.post(
                     '/api/message',
                     {
@@ -205,6 +209,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         if (e.target.tagName === 'DIV')
             setChangeWallpaperDisplay(true);
     }
+
+    const handleEmojiClick = () => {
+        setEmojiDisplay(!emojiDisplay);
+    };
     return (
         <>
             {changeWallpaperDisplay && <ChangeWallpaper setChangeWallpaperDisplay={setChangeWallpaperDisplay} setWallPaper={setWallPaper} chatId={selectedChat._id} />}
@@ -265,7 +273,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                             />
                         ) : (
                             <div className='messages'>
-                                <ScrollableChat messages={messages} setMessages={setMessages} messageToReply={messageToReply} setMessageToReply={setMessageToReply} />
+                                <ScrollableChat messages={messages} setMessages={setMessages} setNewMessage={setNewMessage} setMessageToReply={setMessageToReply} />
                             </div>
                         )}
                         {messageToReply &&
@@ -325,6 +333,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 </Box>
                             </Box>
                         }
+
+                        {emojiDisplay && <EmojiPicker emojiDisplay={emojiDisplay} setEmojiDisplay={setEmojiDisplay} newMessage={newMessage} setNewMessage={setNewMessage} inputRef={inputRef} />}
                         <FormControl onKeyDown={handleClick} isRequired mt={3}>
                             {istyping ?
                                 <div>
@@ -336,13 +346,18 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 </div>
                                 : <></>}
                             <InputGroup>
+                                <InputLeftAddon pointerEvents="auto" cursor="pointer" onClick={handleEmojiClick}>
+                                    <Icon as={FaSmile} color="gray.500" />
+                                </InputLeftAddon>
                                 <Input
                                     variant="filled"
                                     bg="#E0E0E0"
                                     placeholder="Enter a message..."
                                     onChange={typingHandler}
                                     value={newMessage}
-                                    width="calc(100% - 4.5rem)"
+                                    width="calc(100% - 8.5rem)"
+                                    id="main-input-field"
+                                    ref={inputRef}
                                 />
                                 <InputRightElement width="4.5rem">
                                     <label htmlFor="fileInput">

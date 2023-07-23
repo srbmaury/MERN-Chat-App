@@ -78,8 +78,13 @@ const fetchChats = asyncHandler(async (req, res) => {
                 });
                 results.forEach((x) => {
                     if (x.latestMessage) {
-                        x.latestMessage.content = decryptMessage(x.latestMessage.content);
-                        x.latestMessage.media = decryptMessage(x.latestMessage.media);
+                        const latestMessage = x.latestMessage.toObject();
+                        if (latestMessage.content)
+                            latestMessage.content = decryptMessage(latestMessage.content);
+                        if (latestMessage.media)
+                            latestMessage.media = decryptMessage(latestMessage.media);
+                        x.latestMessage.content = latestMessage.content;
+                        x.latestMessage.media = latestMessage.media;
                     }
                 });
                 res.status(200).send(results);

@@ -37,9 +37,9 @@ const sendMessage = asyncHandler(async (req, res) => {
         return res.sendStatus(400);
     }
 
-    // Encrypt the message content before saving
-    const encryptedContent = encryptMessage(content);
-    const encryptedMedia = encryptMessage(media);
+    let encryptedContent, encryptedMedia;
+    if(content) encryptedContent = encryptMessage(content);
+    if(media) encryptedMedia = encryptMessage(media);
 
     var newMessage = {
         sender: req.user._id,
@@ -52,9 +52,9 @@ const sendMessage = asyncHandler(async (req, res) => {
     try {
         var message = await Message.create(newMessage);
 
-        // Decrypt the message content before sending the response
-        const decryptedContent = decryptMessage(message.content);
-        const decryptedMedia = decryptMessage(message.media);
+        let decryptedContent, decryptedMedia;
+        if(message.content) decryptedContent = decryptMessage(message.content);
+        if(message.media) decryptedMedia = decryptMessage(message.media);
         message.content = decryptedContent;
         message.media = decryptedMedia;
 
@@ -90,8 +90,10 @@ const allMessages = asyncHandler(async (req, res) => {
         let messages = await Message.find({ chat: req.params.chatId }).populate("sender", "name pic email").populate("chat").populate("isReplyTo");
         // Decrypt the content of each message before sending the response
         const decryptedMessages = messages.map(message => {
-            const decryptedContent = decryptMessage(message.content);
-            const decryptedMedia = decryptMessage(message.media);
+
+            let decryptedContent, decryptedMedia;
+            if(message.content) decryptedContent = decryptMessage(message.content);
+            if(message.media) decryptedMedia = decryptMessage(message.media);
             if (message.isReplyTo) {
                 const replyMessage = message.isReplyTo.toObject();
                 if (replyMessage.content)
@@ -140,8 +142,10 @@ const deleteMessage = asyncHandler(async (req, res) => {
             }
         });
         if (messages.length > 0) {
-            const decryptedContent = decryptMessage(chat.latestMessage.content);
-            const decryptedMedia = decryptMessage(chat.latestMessage.media);
+            let latestMessage = chat.latestMessage.toObject();
+            let decryptedContent, decryptedMedia;
+            if(latestMessage.content) decryptedContent = decryptMessage(latestMessage.content);
+            if(latestMessage.media) decryptedMedia = decryptMessage(latestMessage.media);
             chat.latestMessage.content = decryptedContent;
             chat.latestMessage.media = decryptedMedia;
         }

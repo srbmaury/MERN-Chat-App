@@ -12,7 +12,7 @@ import '../App.css'
 const ENDPOINT = "http://localhost:5000";
 var socket;
 
-const ScrollableChat = ({ messages, setMessages, setMessageToReply }) => {
+const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToReply }) => {
     const { user, selectedChat } = ChatState();
     const [forwardModalOpen, setForwardModalOpen] = useState(false);
     const toast = useToast();
@@ -36,6 +36,7 @@ const ScrollableChat = ({ messages, setMessages, setMessageToReply }) => {
             socket.emit('deleted message', chat, message);
             setMessages(messages.filter(m => m._id !== messageId));
         } catch (error) {
+            console.log(error);
             toast({
                 title: 'Error Occured!',
                 description: 'Failed to delete the Message',
@@ -69,6 +70,39 @@ const ScrollableChat = ({ messages, setMessages, setMessageToReply }) => {
         }
     }
 
+    const SmartReply = async content => {
+        if(!content){
+            toast({
+                title: 'Error Occured!',
+                description: 'Can\'t reply to Image-only messages',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+                position: 'bottom',
+            });
+            return;
+        }
+        try {
+            const config = {
+                headers: {
+                    'Content-type': 'application/json',
+                    Authorization: `Bearer ${user.token}`,
+                },
+            };
+            const { data } = await axios.post(`/api/openai/smartReply`, { content }, config);
+            setNewMessage(data.smartReply);
+        } catch (error) {
+            console.log(error);
+            toast({
+                title: 'Error Occured!',
+                description: 'Failed to generate smart reply',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+                position: 'bottom',
+            });
+        }
+    }
     return (
         <ScrollableFeed>
             <>
@@ -141,6 +175,15 @@ const ScrollableChat = ({ messages, setMessages, setMessageToReply }) => {
                                             <MenuItem onClick={() => setMessageToReply(m)}>
                                                 Reply
                                             </MenuItem>
+                                            {m.sender._id !== user._id && <span><MenuDivider />
+                                                <MenuItem>
+                                                    <div
+                                                        onClick={() => SmartReply(m.content)}
+                                                    >
+                                                        Smart Reply
+                                                    </div>
+                                                </MenuItem>
+                                            </span>}
                                             <MenuDivider />
                                             <MenuItem onClick={() => setForwardModalOpen(true)}>
                                                 Forward

@@ -23,6 +23,8 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
   - **Typing Indicator:** Users can see real-time typing indicators in chats, showing when others are composing messages.
   - **Message Forwarding:** Users have the ability to delete or forward messages within the app.
   - **Reply to Messages:** Users can reply to particular messages within the chat and can traverse to the tagged message.
+  - **Smart Reply:** Users can generate automatic reply to others' messages. This feature has been implemented using OpenAI api and replies to messages containing text content.
+  - **Emoji Picker:** Users can send emojis in by picking emojis from `emoji-picker`.
   - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
   - **Delete Chats:** Users can also delete a specific chat.
   - **Chat Wallpaper:** Users can update the wallpaper of a particular chat or all at once.
@@ -58,8 +60,9 @@ The MERN Stack Chat App is built using the following technologies:
 - **mongoose:** An Object Data Modeling (ODM) library for MongoDB and Node.js.
 - **nodemailer:** A module for sending emails using Node.js.
 - **react-overflow:** A React component for handling overflow content.
-- **Cloudinary:** A clod-based media-management platform.
+- **Cloudinary:** A cloud-based media-management platform.
 - **node-cron** A cron-like task scheduler for nodeJS.
+- **emoji-picker** A user interface component offering varities of emojis.
 ## Installation
 
 To run the MERN Stack Chat App locally, follow these steps:
@@ -98,6 +101,13 @@ OTP_EXPIRATION_TIME_SECONDS = 600
 ```
 UNSPLASH_ACCESS_KEY=your-unsplash-access-key
 ```
+- For smart replies
+```
+OPENAI_API_KEY=your-openai-api-key
+```
+6. Use `npm start` in root(`MERN-Chat-App`) directory to start backend and in frontend directory to start frontend.
+
+
 Make sure to replace the placeholder values (`your-mongodb-connection-string`, `your-jwt-secret`, etc.) with the actual values specific to your environment and setup.
 
 Made with ❤️ by [srbmaury](https://github.com/srbmaury)
