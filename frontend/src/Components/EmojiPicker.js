@@ -32,7 +32,7 @@ const EmojiPicker = (props) => {
     }, []);
 
     return (
-        <emoji-picker style={{ 'position': 'fixed' }}></emoji-picker>
+        <emoji-picker style={{ 'position': 'fixed', paddingBottom:"40px", zIndex:"200" }}></emoji-picker>
     );
 };
 

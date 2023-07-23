@@ -21,10 +21,10 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
   - **Group Admin Privileges:** In group chats, designated group admins have full control to add or remove members from the group.
   - **Group Name Customization:** While group admins have additional powers, all members can actively participate in the group by having the ability to change the group name. 
   - **Typing Indicator:** Users can see real-time typing indicators in chats, showing when others are composing messages.
-  - **Message Forwarding:** Users have the ability to delete or forward messages within the app.
+  - **Message Forwarding:** Users have the ability to delete or forward messages to other chats.
   - **Reply to Messages:** Users can reply to particular messages within the chat and can traverse to the tagged message.
   - **Smart Reply:** Users can generate automatic reply to others' messages. This feature has been implemented using OpenAI api and replies to messages containing text content.
-  - **Emoji Picker:** Users can send emojis in by picking emojis from `emoji-picker`.
+  - **Emoji Picker:** Users can send emojis in by picking emojis from `emoji-picker`. This feature has only been made available for desktop users `min-width:768px`.
   - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
   - **Delete Chats:** Users can also delete a specific chat.
   - **Chat Wallpaper:** Users can update the wallpaper of a particular chat or all at once.

@@ -11,10 +11,11 @@ import {
     Input,
     InputGroup,
     InputLeftAddon,
-    InputLeftElement,
-    InputRightElement,
+    InputRightAddon,
     Spinner,
     Text,
+    Textarea,
+    useMediaQuery,
     useToast,
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
@@ -51,6 +52,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const [emojiDisplay, setEmojiDisplay] = useState(false);
     const toast = useToast();
     const inputRef = useRef(null);
+    const [isLargerThanMobile] = useMediaQuery("(min-width: 768px)");
 
     const defaultOptions = {
         loop: true,
@@ -135,11 +137,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             }
         });
     });
-
-    const handleClick = async event => {
-        if (event.key === 'Enter')
-            sendMessage();
-    }
 
     const sendMessage = async event => {
         if (newMessage || media) {
@@ -334,8 +331,16 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                             </Box>
                         }
 
-                        {emojiDisplay && <EmojiPicker emojiDisplay={emojiDisplay} setEmojiDisplay={setEmojiDisplay} newMessage={newMessage} setNewMessage={setNewMessage} inputRef={inputRef} />}
-                        <FormControl onKeyDown={handleClick} isRequired mt={3}>
+                        {emojiDisplay &&
+                            <EmojiPicker
+                                emojiDisplay={emojiDisplay}
+                                setEmojiDisplay={setEmojiDisplay}
+                                newMessage={newMessage}
+                                setNewMessage={setNewMessage}
+                                inputRef={inputRef}
+                            />
+                        }
+                        <FormControl isRequired mt={3}>
                             {istyping ?
                                 <div>
                                     <Lottie
@@ -346,35 +351,64 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 </div>
                                 : <></>}
                             <InputGroup>
-                                <InputLeftAddon pointerEvents="auto" cursor="pointer" onClick={handleEmojiClick}>
-                                    <Icon as={FaSmile} color="gray.500" />
-                                </InputLeftAddon>
-                                <Input
+                                {isLargerThanMobile && <Box
+                                    display="flex"
+                                    flexDir="column"
+                                >
+                                    <InputLeftAddon style={{ width: '20px', height: (newMessage.split('\n').length - 1) * 20 + 'px', maxHeight: "160px", backgroundColor: "transparent", borderColor: "transparent" }} cursor="pointer">
+                                        <span ></span>
+                                    </InputLeftAddon>
+                                    <InputLeftAddon pointerEvents="auto" cursor="pointer" onClick={handleEmojiClick}>
+                                        <Icon as={FaSmile} color="gray.500" />
+                                    </InputLeftAddon>
+                                </Box>}
+                                <Textarea
                                     variant="filled"
                                     bg="#E0E0E0"
                                     placeholder="Enter a message..."
                                     onChange={typingHandler}
                                     value={newMessage}
-                                    width="calc(100% - 8.5rem)"
+                                    resize="none"
+                                    overflowY={{ base: 'hidden', lg: 'auto' }}
+                                    width= "100%"
                                     id="main-input-field"
                                     ref={inputRef}
+                                    style={{
+                                        height: (newMessage.split('\n').length * 20 + 20) + 'px',
+                                        minHeight: '40px',
+                                        maxHeight: '200px',
+                                    }}
                                 />
-                                <InputRightElement width="4.5rem">
-                                    <label htmlFor="fileInput">
-                                        <GrAttachment size={20} color="#004D40" cursor="pointer" style={{ marginRight: '10px' }} />
-                                    </label>
-                                    <Input type="file" id="fileInput" onChange={(e) => Upload(e.target.files[0], setMedia, setSendPicLoading)} sx={{ display: "none" }} />
-                                    {sendPicLoading ? (
-                                        <CircularProgress isIndeterminate size="30px" color="#004D40" />
-                                    ) : (
-                                        <IoMdSend
-                                            size={30}
-                                            color="#004D40"
-                                            cursor="pointer"
-                                            onClick={sendMessage}
-                                        />
-                                    )}
-                                </InputRightElement>
+                                <Box
+                                    display="flex"
+                                    flexDir="column"
+                                >
+                                    <InputRightAddon style={{ width: '20px', height: (newMessage.split('\n').length - 1) * 20 + 'px', maxHeight: "160px", backgroundColor: "transparent", borderColor: "transparent" }} cursor="pointer">
+                                        <span ></span>
+                                    </InputRightAddon>
+                                    <Box
+                                        display="flex"
+                                        flexDir="initial"
+                                    >
+                                        <InputRightAddon backgroundColor="transparent" borderColor="transparent">
+                                            <label htmlFor="fileInput">
+                                                <GrAttachment size={20} color="#004D40" cursor="pointer" />
+                                            </label>
+                                            <Input type="file" id="fileInput" onChange={(e) => Upload(e.target.files[0], setMedia, setSendPicLoading)} sx={{ display: "none" }} />
+                                        </InputRightAddon>
+                                        <InputRightAddon>
+                                            {sendPicLoading ? (
+                                                <CircularProgress isIndeterminate size="30px" color="#004D40" />
+                                            ) : (
+                                                <IoMdSend
+                                                    color="#004D40"
+                                                    cursor="pointer"
+                                                    onClick={sendMessage}
+                                                />
+                                            )}
+                                        </InputRightAddon>
+                                    </Box>
+                                </Box>
                             </InputGroup>
                         </FormControl>
                     </Box>
