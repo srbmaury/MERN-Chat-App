@@ -210,6 +210,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const handleEmojiClick = () => {
         setEmojiDisplay(!emojiDisplay);
     };
+
+    useEffect(() => {
+        setNewMessage('');
+        setMedia('');
+        setMessageToReply('');
+    }, [selectedChat]);
+
     return (
         <>
             {changeWallpaperDisplay && <ChangeWallpaper setChangeWallpaperDisplay={setChangeWallpaperDisplay} setWallPaper={setWallPaper} chatId={selectedChat._id} />}
@@ -277,11 +284,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                             <Box
                                 width="100%"
                                 height="70px"
-                                borderRadius="10px"
+                                borderTopRadius="10px"
                                 display="flex"
                                 alignItems="center"
                                 justifyContent="space-between"
-                                backgroundColor="blue.500"
+                                backgroundColor="blue.400"
                                 padding="5px"
                             >
                                 <span
@@ -298,8 +305,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                             marginRight="10px" />}
                                     {messageToReply.content && messageToReply.content !== "" ?
                                         <Text
-                                            fontSize={20}
                                             color="white"
+                                            fontSize="18px"
+                                            fontWeight="bold"
                                         >
                                             {messageToReply.content.length > 50 ? messageToReply.content.slice(0, 47) + "..." : messageToReply.content}
                                         </Text> : "Image"}
@@ -309,7 +317,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                     top="5px"
                                     right="5px"
                                     float="right"
-                                    onClick={() => setMessageToReply()}
+                                    onClick={() => setMessageToReply('')}
                                 />
                             </Box>
                         }
@@ -320,14 +328,23 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 borderRadius="10px"
                                 display="flex"
                                 alignItems="center"
-                                justifyContent="flex-start"
+                                justifyContent="space-between"
                                 backgroundColor="blue.500"
                                 padding="5px"
                             >
-                                <Image src={media} boxSize="60px" borderRadius="50%" marginRight="10px" />
-                                <Box color="white" fontSize="18px" fontWeight="bold">
-                                    Image
+                                <Box display="flex" justifyContent="flex-start">
+                                    <Image src={media} boxSize="60px" borderRadius="50%" marginRight="10px" />
+                                    <Box color="white" fontSize="18px" fontWeight="bold">
+                                        Image
+                                    </Box>
                                 </Box>
+                                <CloseButton
+                                    size="sm"
+                                    top="5px"
+                                    right="5px"
+                                    float="right"
+                                    onClick={() => setMedia('')}
+                                />
                             </Box>
                         }
 
@@ -370,7 +387,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                     value={newMessage}
                                     resize="none"
                                     overflowY={{ base: 'hidden', lg: 'auto' }}
-                                    width= "100%"
+                                    width="100%"
                                     id="main-input-field"
                                     ref={inputRef}
                                     style={{

@@ -70,8 +70,9 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
         }
     }
 
-    const SmartReply = async content => {
-        if(!content){
+    const SmartReply = async m => {
+        const content = m.content;
+        if (!content) {
             toast({
                 title: 'Error Occured!',
                 description: 'Can\'t reply to Image-only messages',
@@ -82,6 +83,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
             });
             return;
         }
+        setMessageToReply(m);
         try {
             const config = {
                 headers: {
@@ -178,7 +180,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                                             {m.sender._id !== user._id && <span><MenuDivider />
                                                 <MenuItem>
                                                     <div
-                                                        onClick={() => SmartReply(m.content)}
+                                                        onClick={() => SmartReply(m)}
                                                     >
                                                         Smart Reply
                                                     </div>
