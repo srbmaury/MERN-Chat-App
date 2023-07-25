@@ -63,6 +63,7 @@ const sendVerificationEmail = async (email, verificationToken) => {
         await transporter.sendMail(mailOptions);
 
     } catch (error) {
+        console.log(error);
         throw new Error("Failed to send verification email");
     }
 };
@@ -145,6 +146,7 @@ const authUser = asyncHandler(async (req, res) => {
                 pic: user.pic,
                 isEmailVerified: user.isEmailVerified,
                 token: generateToken(user._id),
+                blocked: user.blocked
             });
         } else {
             throw new Error("Please verify your email first");
@@ -170,7 +172,6 @@ const allUsers = asyncHandler(async (req, res) => {
 });
 
 const updateProfilePicture = asyncHandler(async (req, res) => {
-    console.log(req.body.pic);
     try {
         const user = await User.findByIdAndUpdate(req.body.id, { pic: req.body.pic }, { new: true });
         console.log(user);
@@ -186,4 +187,49 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { registerUser, verifyEmail, authUser, allUsers, updateProfilePicture };
+const foulsIncrease = asyncHandler(async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (user.blocked) {
+            return res.status(400).json({ error: 'User is already blocked' });
+        }
+
+        user.fouls += 1;
+        if (user.fouls >= 10) {
+            user.blocked = true;
+        }
+
+        await user.save();
+
+        res.status(200).json({ message: 'Foul increased by 1'});
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+const submitForReview = asyncHandler(async (req, res) => {
+    const { foulMessage } = req.body;
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        user.submittedForReview.push(foulMessage);
+
+        await user.save();
+
+        res.status(200).json({ message: "Submitted for review successfully." });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Failed to submit for review." });
+    }
+});
+
+module.exports = { registerUser, verifyEmail, authUser, allUsers, updateProfilePicture, foulsIncrease, submitForReview };

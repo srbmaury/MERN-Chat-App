@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatState } from '../Context/ChatProvider';
 import {
     Box,
+    Button,
     CircularProgress,
     CloseButton,
     FormControl,
@@ -12,9 +13,17 @@ import {
     InputGroup,
     InputLeftAddon,
     InputRightAddon,
+    Modal,
+    ModalBody,
+    ModalCloseButton,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    ModalOverlay,
     Spinner,
     Text,
     Textarea,
+    useDisclosure,
     useMediaQuery,
     useToast,
 } from '@chakra-ui/react';
@@ -53,6 +62,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const toast = useToast();
     const inputRef = useRef(null);
     const [isLargerThanMobile] = useMediaQuery("(min-width: 768px)");
+    const [ModalTitle, setModalTitle] = useState();
+    const [foulMessage, setFoulMessage] = useState('');
+    const { isOpen, onOpen, onClose } = useDisclosure();
 
     const defaultOptions = {
         loop: true,
@@ -90,7 +102,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
             socket.emit('join chat', selectedChat._id);
         } catch (error) {
-            console.log(error);
             toast({
                 title: 'Error Occured!',
                 description: error.response.data.message,
@@ -141,6 +152,30 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const sendMessage = async event => {
         if (newMessage || media) {
             socket.emit('stop typing', selectedChat._id);
+            setFoulMessage(newMessage);
+            try {
+                const { data } = await axios.post('http://127.0.0.1:8000/api/predict', { text: newMessage });
+                if (data.prediction !== 'Neither') {
+                    const config = {
+                        headers: {
+                            'Content-type': 'application/json',
+                            Authorization: `Bearer ${user.token}`,
+                        },
+                    };
+                    setModalTitle(data.prediction);
+                    onOpen();
+                    try {
+                        const { data } = await axios.post('/api/user/foulsIncrease', {}, config);
+                        console.log(data);
+                    } catch (error) {
+                        console.log(error.response.data.error);
+                    }
+                } else {
+                    setFoulMessage('');
+                }
+            } catch (error) {
+                console.log(error);
+            }
             try {
                 const config = {
                     headers: {
@@ -177,6 +212,39 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             }
         }
     };
+
+    const submitForReview = async event => {
+        try {
+            const config = {
+                headers: {
+                    'Content-type': 'application/json',
+                    Authorization: `Bearer ${user.token}`,
+                },
+            };
+            console.log(foulMessage);
+            const { data } = await axios.post('/api/user/submitForReview', {foulMessage}, config);
+            console.log(data);
+            toast({
+                title: 'Submitted for Review',
+                status: 'success',
+                duration: 5000,
+                isClosable: true,
+                position: 'bottom',
+            });
+            onClose();
+        } catch (error) {
+            console.log(error);
+            toast({
+                title: 'Error Occured!',
+                description: error.response.data.message,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+                position: 'bottom',
+            });
+            onClose();
+        }
+    }
 
     const typingHandler = e => {
         setNewMessage(e.target.value);
@@ -277,7 +345,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                             />
                         ) : (
                             <div className='messages'>
-                                <ScrollableChat messages={messages} setMessages={setMessages} setNewMessage={setNewMessage} setMessageToReply={setMessageToReply} />
+                                <ScrollableChat messages={messages} setMessages={setMessages} setNewMessage={setNewMessage} setMessageToReply={setMessageToReply} inputRef={inputRef} />
                             </div>
                         )}
                         {messageToReply &&
@@ -391,7 +459,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                     id="main-input-field"
                                     ref={inputRef}
                                     style={{
-                                        height: (newMessage.split('\n').length * 20 + 20) + 'px',
+                                        height: (newMessage.split('\n').length * 20 + 22) + 'px',
                                         minHeight: '40px',
                                         maxHeight: '200px',
                                     }}
@@ -442,6 +510,22 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     </Text>
                 </Box>
             )}
+            <Modal isOpen={isOpen} onClose={onClose}>
+                <ModalOverlay />
+                <ModalContent>
+                    <ModalHeader>{ModalTitle} Detected</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        Your account may be blocked if such repeated contents are detected.<br />
+                        If you believe there was a mistake, please submit for review.<br />
+                        Please note unless you click on Submit for Review button, this will not be seen by any member of our team.
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button variant='ghost' onClick={submitForReview}>Submit for Review</Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
         </>
     );
 };

@@ -23,6 +23,7 @@ const createStatus = asyncHandler(async (req, res) => {
 
         res.status(201).json(status);
     } catch (error) {
+        console.log(error);
         res.status(400).json({ error: error.message });
     }
 });

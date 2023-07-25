@@ -28,6 +28,8 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
   - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
   - **Delete Chats:** Users can also delete a specific chat.
   - **Chat Wallpaper:** Users can update the wallpaper of a particular chat or all at once.
+  - **Offensive Content Detection** Offensive Content is being detected in the messages being sent and if for a user 10 messages have been found offensive the user will be blocked and won't be able to further access the site.
+  Refer to [Offensive Content Detection](#offensive-content-detection) for more info.
 
 - **User Profile:**
   - **User Search:** Users can search for other users to initiate conversations with them.
@@ -56,13 +58,18 @@ The MERN Stack Chat App is built using the following technologies:
 - **googleapis:** A library for interacting with various Google APIs.
 - **http-proxy-middleware:** A middleware for proxying requests in Express.js.
 - **jsonwebtoken:** A library for creating and verifying JSON Web Tokens (JWT).
-- **moment-timezone:** A library for working with dates and timezones in JavaScript.
 - **mongoose:** An Object Data Modeling (ODM) library for MongoDB and Node.js.
 - **nodemailer:** A module for sending emails using Node.js.
 - **react-overflow:** A React component for handling overflow content.
 - **Cloudinary:** A cloud-based media-management platform.
 - **node-cron** A cron-like task scheduler for nodeJS.
 - **emoji-picker** A user interface component offering varities of emojis.
+
+
+## Offensive Content Detection
+[Link](https://github.com/srbmaury/Flask_API) has been used for this purpose.
+If a user believes that a message has been incorrectly flagged as Offensive or Hateful, they have the option to request a review by clicking the Submit for Review button in the Modal.
+
 ## Installation
 
 To run the MERN Stack Chat App locally, follow these steps:

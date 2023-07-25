@@ -12,7 +12,7 @@ import '../App.css'
 const ENDPOINT = "http://localhost:5000";
 var socket;
 
-const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToReply }) => {
+const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToReply, inputRef }) => {
     const { user, selectedChat } = ChatState();
     const [forwardModalOpen, setForwardModalOpen] = useState(false);
     const toast = useToast();
@@ -36,7 +36,6 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
             socket.emit('deleted message', chat, message);
             setMessages(messages.filter(m => m._id !== messageId));
         } catch (error) {
-            console.log(error);
             toast({
                 title: 'Error Occured!',
                 description: 'Failed to delete the Message',
@@ -93,8 +92,8 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
             };
             const { data } = await axios.post(`/api/openai/smartReply`, { content }, config);
             setNewMessage(data.smartReply);
+            inputRef.current.focus();
         } catch (error) {
-            console.log(error);
             toast({
                 title: 'Error Occured!',
                 description: 'Failed to generate smart reply',
@@ -174,7 +173,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                                     key={m._id}
                                     renderMenu={() => (
                                         <MenuList>
-                                            <MenuItem onClick={() => setMessageToReply(m)}>
+                                            <MenuItem onClick={() => { setMessageToReply(m); inputRef.current.focus(); }} >
                                                 Reply
                                             </MenuItem>
                                             {m.sender._id !== user._id && <span><MenuDivider />
@@ -234,7 +233,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                                                             borderRadius: "5px"
                                                         }}
                                                     >
-                                                        {m.isReplyTo.media !== "" && (
+                                                        {m.isReplyTo.media && (
                                                             <Avatar src={m.isReplyTo.media} marginRight={3} />
                                                         )}
                                                         <Text

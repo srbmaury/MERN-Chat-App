@@ -45,7 +45,18 @@ const Login = () => {
                 { email, password },
                 config
             );
-
+            if(data.blocked){
+                toast({
+                    title: "Your account has been blocked!",
+                    description: "Please contact support.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "bottom",
+                });
+                setLoading(false);
+                return;
+            }
             toast({
                 title: "Login Successful",
                 status: "success",

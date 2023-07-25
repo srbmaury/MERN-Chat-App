@@ -69,6 +69,17 @@ const Statuses = (props) => {
     }, [statuses]);
 
     const addStatus = async () => {
+        if(!text || !media){
+            toast({
+                title: 'Error Occured!',
+                description: 'Both title and description must be non-null',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+                position: 'bottom-left',
+            });
+            return;
+        }
         try {
             const config = {
                 headers: {

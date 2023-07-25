@@ -38,23 +38,23 @@ const sendMessage = asyncHandler(async (req, res) => {
     }
 
     let encryptedContent, encryptedMedia;
-    if(content) encryptedContent = encryptMessage(content);
-    if(media) encryptedMedia = encryptMessage(media);
+    if (content) encryptedContent = encryptMessage(content);
+    if (media) encryptedMedia = encryptMessage(media);
 
     var newMessage = {
         sender: req.user._id,
         content: encryptedContent,
         media: encryptedMedia,
-        isReplyTo: messageId,
-        chat: chatId
+        isReplyTo: messageId ? messageId : undefined,
+        chat: chatId,
     };
 
     try {
         var message = await Message.create(newMessage);
 
         let decryptedContent, decryptedMedia;
-        if(message.content) decryptedContent = decryptMessage(message.content);
-        if(message.media) decryptedMedia = decryptMessage(message.media);
+        if (message.content) decryptedContent = decryptMessage(message.content);
+        if (message.media) decryptedMedia = decryptMessage(message.media);
         message.content = decryptedContent;
         message.media = decryptedMedia;
 
@@ -64,24 +64,25 @@ const sendMessage = asyncHandler(async (req, res) => {
         message = await message.populate("chat");
         message = await User.populate(message, {
             path: "chat.users",
-            select: "name pic email"
+            select: "name pic email",
         });
 
         if (message.isReplyTo) {
             let replyMsg = await Message.findById(message.isReplyTo);
-            replyMsg.content = decryptMessage(replyMsg.content);
-            replyMsg.media = decryptMessage(replyMsg.media);
+            replyMsg = replyMsg.toObject();
+            if (replyMsg.content) replyMsg.content = decryptMessage(replyMsg.content);
+            if (replyMsg.media) replyMsg.media = decryptMessage(replyMsg.media);
             message.isReplyTo = replyMsg;
         }
 
-        await Chat.findByIdAndUpdate(req.body.chatId, {
-            latestMessage: message
+        await Chat.findByIdAndUpdate(chatId, {
+            latestMessage: message,
         });
 
-        res.json(message);
+        res.status(201).json(message);
     } catch (error) {
-        res.status(400);
-        throw new Error(error.message);
+        console.log(error);
+        res.status(400).json({ error: "Message creation failed" });
     }
 });
 
@@ -92,8 +93,8 @@ const allMessages = asyncHandler(async (req, res) => {
         const decryptedMessages = messages.map(message => {
 
             let decryptedContent, decryptedMedia;
-            if(message.content) decryptedContent = decryptMessage(message.content);
-            if(message.media) decryptedMedia = decryptMessage(message.media);
+            if (message.content) decryptedContent = decryptMessage(message.content);
+            if (message.media) decryptedMedia = decryptMessage(message.media);
             if (message.isReplyTo) {
                 const replyMessage = message.isReplyTo.toObject();
                 if (replyMessage.content)
@@ -144,8 +145,8 @@ const deleteMessage = asyncHandler(async (req, res) => {
         if (messages.length > 0) {
             let latestMessage = chat.latestMessage.toObject();
             let decryptedContent, decryptedMedia;
-            if(latestMessage.content) decryptedContent = decryptMessage(latestMessage.content);
-            if(latestMessage.media) decryptedMedia = decryptMessage(latestMessage.media);
+            if (latestMessage.content) decryptedContent = decryptMessage(latestMessage.content);
+            if (latestMessage.media) decryptedMedia = decryptMessage(latestMessage.media);
             chat.latestMessage.content = decryptedContent;
             chat.latestMessage.media = decryptedMedia;
         }
