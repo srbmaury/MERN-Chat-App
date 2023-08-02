@@ -133,21 +133,21 @@ function SideDrawer() {
                 padding="5px 10px 5px 10px"
                 borderWidth="5px"
             >
-                <Tooltip label="Search users to chat" hasArrow placement="bottom-end">
+                {user && !user.isAdmin && <Tooltip label="Search users to chat" hasArrow placement="bottom-end">
                     <Button variant="ghost" onClick={onOpen}>
                         <i className="fa-solid fa-magnifying-glass"></i>
                         <Text display={{ base: 'none', md: 'flex' }} px="4">
                             Search User
                         </Text>
                     </Button>
-                </Tooltip>
+                </Tooltip>}
 
                 <Text fontSize="2xl" fontFamily="Work sans">
                     Talk-A-Tive
                 </Text>
 
                 <Box>
-                    <Box
+                    {user && !user.isAdmin && <Box
                         marginBottom={-8}
                         marginLeft={-10}
                         boxSize={8}
@@ -159,15 +159,15 @@ function SideDrawer() {
                         onClick={handleOpenModal}
                     >
                         <Statuses isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} handleCloseModal={handleCloseModal} />
-                    </Box>
+                    </Box>}
                     <Menu>
-                        <MenuButton padding={1}>
+                        {user && !user.isAdmin && <MenuButton padding={1}>
                             <NotificationBadge
                                 count={notification.length}
                                 effect={Effect.SCALE}
                             />
                             <BellIcon fontSize="2xl" m={1} />
-                        </MenuButton>
+                        </MenuButton>}
                         <MenuList
                             pl={2}
                         >

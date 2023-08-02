@@ -146,7 +146,8 @@ const authUser = asyncHandler(async (req, res) => {
                 pic: user.pic,
                 isEmailVerified: user.isEmailVerified,
                 token: generateToken(user._id),
-                blocked: user.blocked
+                blocked: user.blocked,
+                isAdmin: user.isAdmin,
             });
         } else {
             throw new Error("Please verify your email first");
@@ -206,7 +207,7 @@ const foulsIncrease = asyncHandler(async (req, res) => {
 
         await user.save();
 
-        res.status(200).json({ message: 'Foul increased by 1'});
+        res.status(200).json({ message: 'Foul increased by 1' });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -232,4 +233,60 @@ const submitForReview = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { registerUser, verifyEmail, authUser, allUsers, updateProfilePicture, foulsIncrease, submitForReview };
+const fetchSubmitForReview = asyncHandler(async (req, res) => {
+    try {
+        if (!req.user.isAdmin) {
+            return res.status(403).json({ message: "Unauthorized. Only admins can fetch 'submit for review' messages." });
+        }
+
+        const users = await User.find({ submittedForReview: { $ne: [] } }, '_id name submittedForReview');
+
+        const usersWithSubmitForReview = [];
+
+        users.forEach((user) => {
+            usersWithSubmitForReview.push({
+                _id: user._id,
+                name: user.name,
+                submittedForReview: user.submittedForReview,
+            });
+        });
+
+        res.status(200).json({ usersWithSubmitForReview });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Failed to fetch 'submit for review' messages." });
+    }
+});
+
+const review = asyncHandler(async (req, res) => {
+    try {
+        if (!req.user.isAdmin) {
+            return res.status(403).json({ message: "Unauthorized. Only admins can fetch 'submit for review' messages." });
+        }
+
+        const { messages } = req.body;
+        const users = await User.find({});
+
+        for (const message of messages) {
+            const reviewMessage = message.message;
+            for (const user of users) {
+                const { submittedForReview, fouls } = user;
+                const messageIndex = submittedForReview.indexOf(reviewMessage);
+                if (messageIndex !== -1) {
+                    submittedForReview.splice(messageIndex, 1);
+                    user.submittedForReview = submittedForReview;
+                    if(message.category === 2)
+                        user.fouls = Math.max(0, fouls - 1);
+                    if(user.fouls < 10) user.blocked = false;
+                    await user.save();
+                }
+            }
+        }
+        res.status(200).json({ message: "Review completed successfully." });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Failed to fetch update." });
+    }
+});
+
+module.exports = { registerUser, verifyEmail, authUser, allUsers, updateProfilePicture, foulsIncrease, submitForReview, fetchSubmitForReview, review };

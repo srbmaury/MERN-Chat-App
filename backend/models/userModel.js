@@ -18,6 +18,7 @@ const userSchema = mongoose.Schema(
         submittedForReview: [
             { type: String },
         ],
+        isAdmin: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

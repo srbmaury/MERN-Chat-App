@@ -8,6 +8,7 @@ const statusRoutes = require('./Routes/statusRoutes');
 const otpRoutes = require('./Routes/otpRoutes');
 const unsplashRoutes = require('./Routes/unsplashRoutes');
 const openAIRoutes = require('./Routes/openAIRoutes');
+const googleSheetRoutes = require('./Routes/googleSheetRoutes');
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const cloudinary = require('cloudinary').v2;
 const multer = require("multer");
@@ -31,6 +32,7 @@ app.use('/api/status', statusRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/unsplash', unsplashRoutes);
 app.use('/api/openai', openAIRoutes);
+app.use('/api/googlesheet', googleSheetRoutes);
 
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,

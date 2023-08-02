@@ -66,9 +66,11 @@ The MERN Stack Chat App is built using the following technologies:
 - **emoji-picker** A user interface component offering varities of emojis.
 
 
-## Offensive Content Detection
-[Link](https://github.com/srbmaury/Flask_API) has been used for this purpose.
-If a user believes that a message has been incorrectly flagged as Offensive or Hateful, they have the option to request a review by clicking the Submit for Review button in the Modal.
+## Offensive or Hateful Content Detection
+[Flask API](https://github.com/srbmaury/Flask_API) has been used for this purpose.
+If a user believes that a message has been incorrectly flagged as Offensive or Hateful, they have the option to request a review by clicking the Submit for Review button in the Modal. Until unless user ticks submit for review, the message won't be recorded. The message submitted for review may also bbe added to training dataset for further training the model using google sheets api.
+
+![Offensive or Hateful Content Detection](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690957402/uploads/14e4073b8bcd78583decbee941faa3dd_ggbbag.png)
 
 ## Installation
 
@@ -111,6 +113,12 @@ UNSPLASH_ACCESS_KEY=your-unsplash-access-key
 - For smart replies
 ```
 OPENAI_API_KEY=your-openai-api-key
+```
+For Sending Data to Google Sheet 
+```
+CLIENT_EMAIL=your-google-sheets-api-client-email
+PRIVATE_KEY=your-google-sheets-api-private-key
+GOOGLE_SHEET_ID=your-google-sheet-id
 ```
 6. Use `npm start` in root(`MERN-Chat-App`) directory to start backend and in frontend directory to start frontend.
 
