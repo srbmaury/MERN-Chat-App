@@ -9,6 +9,10 @@ const ChatProvider = ({children}) => {
     const [chats, setChats] = useState([]);
     const [notification, setNotification] = useState([]);
     const [newLatestMessage, setNewLatestMessage] = useState();
+    const [gameStatus, setGameStatus] = useState(false);
+    const [gameRequestTime, setGameRequestTime] = useState();
+    const [playArenaVisibility, setPlayArenaVisibility] = useState(false);
+
     const history = useHistory();
     
     useEffect(() => {
@@ -28,7 +32,13 @@ const ChatProvider = ({children}) => {
             notification, 
             setNotification,
             newLatestMessage, 
-            setNewLatestMessage
+            setNewLatestMessage,
+            gameStatus, 
+            setGameStatus,
+            gameRequestTime, 
+            setGameRequestTime,
+            playArenaVisibility, 
+            setPlayArenaVisibility
           }}
         >
             {children}
