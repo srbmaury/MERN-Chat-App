@@ -75,7 +75,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         },
     };
 
-    const { user, selectedChat, setSelectedChat, notification, setNotification, setNewLatestMessage } = ChatState();
+    const { user, selectedChat, setSelectedChat, notification, setNotification, setNewLatestMessage, setGameStatus, setGameRequestTime } = ChatState();
 
     useEffect(() => {
         setMessageToReply();
@@ -150,6 +150,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     });
 
     const sendMessage = async event => {
+        if (newMessage === '/play' && !selectedChat.isGroupChat) {
+            socket.emit('play request', selectedChat, user);
+            setGameStatus(true);
+            setGameRequestTime(new Date());
+            setNewMessage('');
+            return;
+        }
         if (newMessage || media) {
             socket.emit('stop typing', selectedChat._id);
             setFoulMessage(newMessage);
@@ -165,8 +172,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     setModalTitle(data.prediction);
                     onOpen();
                     try {
-                        const { data } = await axios.post('/api/user/foulsIncrease', {}, config);
-                        console.log(data);
+                        await axios.post('/api/user/foulsIncrease', {}, config);
                     } catch (error) {
                         console.log(error.response.data.error);
                     }
@@ -221,9 +227,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     Authorization: `Bearer ${user.token}`,
                 },
             };
-            console.log(foulMessage);
-            const { data } = await axios.post('/api/user/submitForReview', {foulMessage}, config);
-            console.log(data);
+            await axios.post('/api/user/submitForReview', { foulMessage }, config);
             toast({
                 title: 'Submitted for Review',
                 status: 'success',

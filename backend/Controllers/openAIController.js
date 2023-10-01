@@ -26,11 +26,8 @@ async function generateSmartReply(context) {
 
 async function smartReply(req, res) {
     const { content } = req.body;
-    console.log("OK");
-
     try {
         const smartReply = await generateSmartReply(content);
-        console.log("Smart Reply:", smartReply);
         res.status(200).json({ smartReply });
     } catch (error) {
         console.error("Error generating smart reply:", error);
