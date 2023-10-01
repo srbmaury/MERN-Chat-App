@@ -127,6 +127,46 @@ io.on("connection", (socket) => {
         });
     });
 
+    socket.on('play request', (chat, u) => {
+        if (!chat.users) return console.log('chat.users not defined');
+        chat.users.forEach(user => {
+            if(user._id === u._id) return;
+            socket.in(user._id).emit('received play request', chat, u);
+        });
+    });
+
+    socket.on('player did not respond', (chat, u) => {
+        if (!chat || !chat.users) return console.log('chat.users not defined');
+        chat.users.forEach(user => {
+            if(user._id === u._id) return;
+            socket.in(user._id).emit('no response close game');
+        });
+    });
+
+    socket.on('accept play request', (chat, u) => {
+        if (!chat || !chat.users) return console.log('chat.users not defined');
+        chat.users.forEach(user => {
+            if(user._id === u._id) return;
+            socket.in(user._id).emit('accepted play request', u.name);
+        });
+    });
+
+    socket.on('reject play request', (chat, u) => {
+        if (!chat || !chat.users) return console.log('chat.users not defined');
+        chat.users.forEach(user => {
+            if(user._id === u._id) return;
+            socket.in(user._id).emit('rejected play request', u.name);
+        });
+    });
+
+    socket.on('player moved', (newBoard, chat, u, xIsNext) => {
+        if (!chat || !chat.users) return console.log('chat.users not defined');
+        chat.users.forEach(user => {
+            if(user._id === u._id) return;
+            socket.in(user._id).emit('your turn',  newBoard, xIsNext);
+        });
+    });
+
     socket.off("setup", () => {
         console.log("USER DISCONNECTED");
         socket.leave(userData._id);
