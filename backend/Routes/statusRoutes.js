@@ -1,5 +1,5 @@
 const express = require("express");
-const { createStatus, getStatuses, getStatusById, deleteStatus } = require("../controllers/statusController");
+const { createStatus, getStatuses, getStatusById, deleteStatus } = require("../Controllers/statusController");
 const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();

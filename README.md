@@ -26,7 +26,7 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
   - **Message Forwarding:** Users have the ability to delete or forward messages to other chats.
   - **Reply to Messages:** Users can reply to particular messages within the chat and can traverse to the tagged message.
   - **Smart Reply:** Users can generate automatic replies to others' messages. This feature has been implemented using OpenAI api and replies to messages containing text content.
-  - **Emoji Picker:** Users can send emojis in by picking emojis from the `emoji-picker`. This feature has only been made available for desktop users `min-width:768px`.
+  - **Emoji Picker:** Users can send emojis in by picking emojis from the `emoji-picker`. This feature has only been made available for desktop users `min-width:768px`. <em> (deprecated in production)</em>
   - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
   - **Delete Chats:** Users can also delete a specific chat.
   - **Chat Wallpaper:** Users can update the wallpaper of a particular chat or all at once.
@@ -85,20 +85,25 @@ To run the MERN Stack Chat App locally, follow these steps:
 3. Install the backend dependencies: `npm install`
 4. Install the frontend dependencies: `cd frontend` then `npm install`
 5. Create a `.env` file in the root directory with the following environment variables:
+
 - For Connection to MongoDB and Login
-```plaintext
+```
 PORT=3000
 MONGO_URI=your-mongodb-connection-string
 JWT_SECRET=your-jwt-secret
-````
-- For Sending Email
+```
+
+- For Encrypting Messages
 ```
 ENCRYPTION_KEY=your-encryption-key
-CLIENT_ID=your-client-id
-CLIENT_SECRET=your-client-secret
-REFRESH_TOKEN=your-refresh-token
-EMAIL_ID=your-email-id
 ```
+
+- For Sending Email
+```
+EMAIL_ID=your-email-id
+PASSWORD = App-specific Password in Gmail
+```
+
 - For Working with Photos
 ```
 CLOUD_NAME=your-cloudinary-cloud-name
@@ -106,26 +111,30 @@ API_KEY=your-cloudinary-api-key
 API_SECRET=your-cloudinary-api-secret
 UPLOAD_PRESET=cloudinary-upload-preset
 ```
+
 - For Otp During Password Reset
 ```
 OTP_EXPIRATION_TIME_SECONDS = 600
 ```
+
 - For Searching Photos for Wallpaper
 ```
 UNSPLASH_ACCESS_KEY=your-unsplash-access-key
 ```
+
 - For smart replies
 ```
 OPENAI_API_KEY=your-openai-api-key
 ```
+
 For Sending Data to Google Sheet 
 ```
 CLIENT_EMAIL=your-google-sheets-api-client-email
 PRIVATE_KEY=your-google-sheets-api-private-key
 GOOGLE_SHEET_ID=your-google-sheet-id
 ```
-6. Use `npm start` in the root(`MERN-Chat-App`) directory to start the backend and in the frontend directory to start the frontend.
 
+6. Use `npm start` in the root(`MERN-Chat-App`) directory.
 
 Make sure to replace the placeholder values (`your-mongodb-connection-string`, `your-jwt-secret`, etc.) with the actual values specific to your environment and setup.
 

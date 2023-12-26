@@ -1,21 +1,20 @@
-const asyncHandler = require('express-async-handler');
-const User = require('../models/userModel');
-const generateToken = require('../config/generateToken');
+const asyncHandler = require("express-async-handler");
+const User = require("../models/userModel");
+const generateToken = require("../config/generateToken");
 const nodemailer = require("nodemailer");
-const { google } = require("googleapis");
 const dotenv = require("dotenv");
-const fs = require("fs");
+const path = require('path');
+const fs = require('fs').promises;
 
 dotenv.config();
 
-const clientId = process.env.CLIENT_ID;
-const clientSecret = process.env.CLIENT_SECRET;
-const refreshToken = process.env.REFRESH_TOKEN;
 const myEmailId = process.env.EMAIL_ID;
+const emailPW = process.env.PASSWORD;
 
 const generateVerificationToken = () => {
     const length = 10;
-    const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const characters =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let token = "";
     for (let i = 0; i < length; i++) {
         const randomIndex = Math.floor(Math.random() * characters.length);
@@ -25,46 +24,32 @@ const generateVerificationToken = () => {
 };
 
 const sendVerificationEmail = async (email, verificationToken) => {
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: myEmailId,
+            pass: emailPW,
+        },
+    });
+
     try {
-        const oAuth2Client = new google.auth.OAuth2(
-            clientId,
-            clientSecret,
-            "https://developers.google.com/oauthplayground" // Redirect URI
-        );
-
-        oAuth2Client.setCredentials({
-            refresh_token: refreshToken,
-        });
-
-        const accessToken = await oAuth2Client.getAccessToken();
-
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                type: "OAuth2",
-                user: myEmailId,
-                clientId,
-                clientSecret,
-                refreshToken,
-                accessToken,
-            },
-        });
-
-        const emailTemplate = fs.readFileSync("backend/templates/send-verification-email-success.html", "utf8");
-        const html = emailTemplate.replace("{{verificationToken}}", verificationToken);
+        const __dirname1 = path.resolve();
+        const templatePath = path.join(__dirname1, 'backend', 'templates', 'send-verification-email-success.html');
+        const emailTemplate = await fs.readFile(templatePath, 'utf8');
+        const html = emailTemplate.replace('{{verificationToken}}', verificationToken);
 
         const mailOptions = {
             from: myEmailId,
             to: email,
-            subject: "Email Verification",
-            html,
+            subject: 'Email Verification',
+            html
         };
 
         await transporter.sendMail(mailOptions);
-
+        return true;
     } catch (error) {
-        console.log(error);
-        throw new Error("Failed to send verification email");
+        console.error(error);
+        return false;
     }
 };
 
@@ -85,50 +70,62 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const verificationToken = generateVerificationToken();
 
-    const user = await User.create({
-        name,
-        email,
-        password,
-        pic,
-        verificationToken,
-    });
+    const isEmailSent = await sendVerificationEmail(email, verificationToken);
 
-    if (user) {
-        await sendVerificationEmail(email, verificationToken);
-        res.status(201).json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            pic: user.pic,
-            isEmailVerified: user.isEmailVerified,
-            token: generateToken(user._id),
+    if (isEmailSent) {
+        const user = await User.create({
+            name,
+            email,
+            password,
+            pic,
+            verificationToken,
         });
+
+        if (user) {
+            res.status(201).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                pic: user.pic,
+                isEmailVerified: user.isEmailVerified,
+                token: generateToken(user._id),
+            });
+        } else {
+            res.status(400);
+            throw new Error("Failed to create the user");
+        }
     } else {
-        res.status(400);
-        throw new Error("Failed to create the user");
+        res.status(500);
+        throw new Error("Failed to send verification email");
     }
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
-    const { token } = req.params;
+    try {
+        const { token } = req.params;
 
-    const user = await User.findOne({ verificationToken: token });
+        const user = await User.findOne({ verificationToken: token });
 
-    if (!user) {
-        res.status(404);
-        throw new Error("Invalid verification token");
-    }
+        if (!user) {
+            res.status(404).json({ error: "Invalid verification token" });
+            return;
+        }
 
-    user.isEmailVerified = true;
-    await user.save();
+        user.isEmailVerified = true;
+        await user.save();
 
-    const successHtml = fs.readFileSync("backend/templates/verification-success.html", "utf8");
-    const failureHtml = fs.readFileSync("backend/templates/verification-failure.html", "utf8");
+        const __dirname1 = path.resolve();
+        const successHtml = await fs.readFile(path.join(__dirname1, 'backend', 'templates', 'verification-success.html'), 'utf8');
+        const failureHtml = await fs.readFile(path.join(__dirname1, 'backend', 'templates', 'verification-failure.html'), 'utf8');
 
-    if (user && user.isEmailVerified) {
-        res.send(successHtml);
-    } else {
-        res.send(failureHtml);
+        if (user.isEmailVerified) {
+            res.send(successHtml);
+        } else {
+            res.send(failureHtml);
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
@@ -161,11 +158,11 @@ const authUser = asyncHandler(async (req, res) => {
 const allUsers = asyncHandler(async (req, res) => {
     const keyword = req.query.search
         ? {
-            $or: [
-                { name: { $regex: req.query.search, $options: "i" } },
-                { email: { $regex: req.query.search, $options: "i" } },
-            ],
-        }
+              $or: [
+                  { name: { $regex: req.query.search, $options: "i" } },
+                  { email: { $regex: req.query.search, $options: "i" } },
+              ],
+          }
         : {};
 
     const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
@@ -174,7 +171,11 @@ const allUsers = asyncHandler(async (req, res) => {
 
 const updateProfilePicture = asyncHandler(async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(req.body.id, { pic: req.body.pic }, { new: true });
+        const user = await User.findByIdAndUpdate(
+            req.body.id,
+            { pic: req.body.pic },
+            { new: true }
+        );
         res.status(201).json({
             _id: user._id,
             name: user.name,
@@ -192,11 +193,11 @@ const foulsIncrease = asyncHandler(async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: "User not found" });
         }
 
         if (user.blocked) {
-            return res.status(400).json({ error: 'User is already blocked' });
+            return res.status(400).json({ error: "User is already blocked" });
         }
 
         user.fouls += 1;
@@ -206,9 +207,9 @@ const foulsIncrease = asyncHandler(async (req, res) => {
 
         await user.save();
 
-        res.status(200).json({ message: 'Foul increased by 1' });
+        res.status(200).json({ message: "Foul increased by 1" });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
@@ -235,10 +236,16 @@ const submitForReview = asyncHandler(async (req, res) => {
 const fetchSubmitForReview = asyncHandler(async (req, res) => {
     try {
         if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Unauthorized. Only admins can fetch 'submit for review' messages." });
+            return res.status(403).json({
+                message:
+                    "Unauthorized. Only admins can fetch 'submit for review' messages.",
+            });
         }
 
-        const users = await User.find({ submittedForReview: { $ne: [] } }, '_id name submittedForReview');
+        const users = await User.find(
+            { submittedForReview: { $ne: [] } },
+            "_id name submittedForReview"
+        );
 
         const usersWithSubmitForReview = [];
 
@@ -253,14 +260,19 @@ const fetchSubmitForReview = asyncHandler(async (req, res) => {
         res.status(200).json({ usersWithSubmitForReview });
     } catch (error) {
         console.log(error);
-        res.status(500).json({ message: "Failed to fetch 'submit for review' messages." });
+        res.status(500).json({
+            message: "Failed to fetch 'submit for review' messages.",
+        });
     }
 });
 
 const review = asyncHandler(async (req, res) => {
     try {
         if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Unauthorized. Only admins can fetch 'submit for review' messages." });
+            return res.status(403).json({
+                message:
+                    "Unauthorized. Only admins can fetch 'submit for review' messages.",
+            });
         }
 
         const { messages } = req.body;
@@ -274,9 +286,9 @@ const review = asyncHandler(async (req, res) => {
                 if (messageIndex !== -1) {
                     submittedForReview.splice(messageIndex, 1);
                     user.submittedForReview = submittedForReview;
-                    if(message.category === 2)
+                    if (message.category === 2)
                         user.fouls = Math.max(0, fouls - 1);
-                    if(user.fouls < 10) user.blocked = false;
+                    if (user.fouls < 10) user.blocked = false;
                     await user.save();
                 }
             }
@@ -288,4 +300,14 @@ const review = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { registerUser, verifyEmail, authUser, allUsers, updateProfilePicture, foulsIncrease, submitForReview, fetchSubmitForReview, review };
+module.exports = {
+    registerUser,
+    verifyEmail,
+    authUser,
+    allUsers,
+    updateProfilePicture,
+    foulsIncrease,
+    submitForReview,
+    fetchSubmitForReview,
+    review,
+};

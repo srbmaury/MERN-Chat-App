@@ -40,10 +40,10 @@ import { IoMdSend } from 'react-icons/io';
 import { GrAttachment } from 'react-icons/gr';
 import Upload from './miscellaneous/Cloudinary';
 import ChangeWallpaper from './ChangeWallpaper';
-import EmojiPicker from './EmojiPicker';
+// import EmojiPicker from './EmojiPicker';
 import { FaSmile } from 'react-icons/fa';
 
-const ENDPOINT = "http://localhost:5000";
+const ENDPOINT = "https://mern-chat-app-hs5n.onrender.com";
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -419,7 +419,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 />
                             </Box>
                         }
-
+                        {/*
                         {emojiDisplay &&
                             <EmojiPicker
                                 emojiDisplay={emojiDisplay}
@@ -429,6 +429,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 inputRef={inputRef}
                             />
                         }
+                        */}
                         <FormControl isRequired mt={3}>
                             {istyping ?
                                 <div>
