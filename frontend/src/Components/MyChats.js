@@ -13,7 +13,7 @@ import io from 'socket.io-client';
 import GameInvitation from './Gamification/GameInvitation';
 import PlayArena from './Gamification/PlayArena';
 
-const ENDPOINT = "https://mern-chat-app-hs5n.onrender.com";
+const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket;
 const MyChats = ({ fetchAgain }) => {
     const [loggedUser, setLoggedUser] = useState();

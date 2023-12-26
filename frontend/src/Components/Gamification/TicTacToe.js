@@ -3,7 +3,7 @@ import { ChatState } from '../../Context/ChatProvider';
 import { io } from 'socket.io-client';
 import { Box, Button, Center, Text, Grid, GridItem } from '@chakra-ui/react';
 
-const ENDPOINT = "https://mern-chat-app-hs5n.onrender.com";
+const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket;
 
 const TicTacToe = ({ myTurn, setMyTurn }) => {

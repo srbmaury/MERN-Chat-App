@@ -43,7 +43,7 @@ import ChangeWallpaper from './ChangeWallpaper';
 // import EmojiPicker from './EmojiPicker';
 import { FaSmile } from 'react-icons/fa';
 
-const ENDPOINT = "https://mern-chat-app-hs5n.onrender.com";
+const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {

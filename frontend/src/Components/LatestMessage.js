@@ -4,7 +4,7 @@ import io from 'socket.io-client';
 import { formatDate2 } from '../config/ChatLogics';
 import { ChatState } from '../Context/ChatProvider';
 
-const ENDPOINT = "https://mern-chat-app-hs5n.onrender.com";
+const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 let socket;
 
 const LatestMessage = ({ currChat }) => {

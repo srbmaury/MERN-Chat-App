@@ -22,7 +22,7 @@ import {
   
   import io from 'socket.io-client';
   
-  const ENDPOINT = "https://mern-chat-app-hs5n.onrender.com";
+  const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
   var socket;
   
   const GroupChatModal = ({ children }) => {

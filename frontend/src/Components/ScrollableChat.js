@@ -9,7 +9,7 @@ import ForwardModal from './miscellaneous/ForwardModal'
 import { ContextMenu } from 'chakra-ui-contextmenu'
 import '../App.css'
 
-const ENDPOINT = "https://mern-chat-app-hs5n.onrender.com";
+const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket;
 
 const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToReply, inputRef }) => {

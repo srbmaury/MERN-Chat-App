@@ -5,7 +5,7 @@ import { io } from "socket.io-client";
 import { getSender, getSenderFull } from "../../config/ChatLogics";
 import { ChatState } from '../../Context/ChatProvider';
 
-const ENDPOINT = "https://mern-chat-app-hs5n.onrender.com";
+const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket;
 const ForwardModal = ({ children, content, media, messages, setMessages, forwardModalOpen, setForwardModalOpen }) => {
     const { isOpen, onOpen, onClose } = useDisclosure();
