@@ -10,7 +10,7 @@
         "build": "npm ci --legacy-peer-deps --prefix frontend && npm run build --prefix frontend"
     },
     "engines": {
-        "node": ">=20"
+        "node": ">=22 <23"
     },
     "author": "Saurabh Maurya",
     "license": "ISC",
