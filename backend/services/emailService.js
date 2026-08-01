@@ -2,6 +2,10 @@ const nodemailer = require("nodemailer");
 
 const EMAIL_TIMEOUT_MS = 10_000;
 
+const isPlaceholder = value => !value || /^(replace-|your-|xkeysib-your-)/i.test(value.trim());
+const isBrevoConfigured = () =>
+    !isPlaceholder(process.env.BREVO_API_KEY) && !isPlaceholder(process.env.FROM_EMAIL);
+
 async function sendWithBrevo({ to, subject, html, text }) {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
@@ -26,6 +30,7 @@ async function sendWithBrevo({ to, subject, html, text }) {
         const detail = (await response.text()).slice(0, 500);
         throw new Error(`Brevo email failed (${response.status}): ${detail}`);
     }
+    return { provider: "brevo", accepted: [to] };
 }
 
 async function sendWithGmail({ to, subject, html, text }) {
@@ -41,24 +46,32 @@ async function sendWithGmail({ to, subject, html, text }) {
         socketTimeout: EMAIL_TIMEOUT_MS,
     });
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
         from: process.env.EMAIL_ID,
         to,
         subject,
         html,
         text,
     });
+    return {
+        provider: "gmail",
+        accepted: info.accepted || [],
+        rejected: info.rejected || [],
+        messageId: info.messageId,
+    };
 }
 
 async function sendEmail(message) {
-    if (process.env.BREVO_API_KEY) return sendWithBrevo(message);
+    if (isBrevoConfigured()) return sendWithBrevo(message);
     return sendWithGmail(message);
 }
 
 function sendEmailInBackground(message) {
     setImmediate(() => {
-        sendEmail(message).catch(error => console.error(`Background email failed: ${error.message}`));
+        sendEmail(message)
+            .then(result => console.log(`Background email accepted by ${result.provider}: ${result.accepted.join(", ")}`))
+            .catch(error => console.error(`Background email failed: ${error.message}`));
     });
 }
 
-module.exports = { EMAIL_TIMEOUT_MS, sendEmail, sendEmailInBackground };
+module.exports = { EMAIL_TIMEOUT_MS, isBrevoConfigured, sendEmail, sendEmailInBackground };

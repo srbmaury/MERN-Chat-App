@@ -1,6 +1,21 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { sendEmail } = require("../services/emailService");
+const { isBrevoConfigured, sendEmail } = require("../services/emailService");
+
+test("Brevo placeholder values are treated as unconfigured", () => {
+    const originalKey = process.env.BREVO_API_KEY;
+    const originalFrom = process.env.FROM_EMAIL;
+    process.env.BREVO_API_KEY = "xkeysib-your-api-key";
+    process.env.FROM_EMAIL = "your-verified-brevo-sender@example.com";
+    try {
+        assert.equal(isBrevoConfigured(), false);
+    } finally {
+        if (originalKey === undefined) delete process.env.BREVO_API_KEY;
+        else process.env.BREVO_API_KEY = originalKey;
+        if (originalFrom === undefined) delete process.env.FROM_EMAIL;
+        else process.env.FROM_EMAIL = originalFrom;
+    }
+});
 
 test("Brevo email uses the HTTPS API and configured sender", async () => {
     const originalFetch = global.fetch;
@@ -43,7 +58,9 @@ test("Brevo email uses the HTTPS API and configured sender", async () => {
 test("Brevo email reports non-success responses", async () => {
     const originalFetch = global.fetch;
     const originalKey = process.env.BREVO_API_KEY;
+    const originalFrom = process.env.FROM_EMAIL;
     process.env.BREVO_API_KEY = "test-api-key";
+    process.env.FROM_EMAIL = "sender@example.com";
     global.fetch = async () => ({ status: 400, text: async () => "invalid sender" });
 
     try {
@@ -55,5 +72,7 @@ test("Brevo email reports non-success responses", async () => {
         global.fetch = originalFetch;
         if (originalKey === undefined) delete process.env.BREVO_API_KEY;
         else process.env.BREVO_API_KEY = originalKey;
+        if (originalFrom === undefined) delete process.env.FROM_EMAIL;
+        else process.env.FROM_EMAIL = originalFrom;
     }
 });
