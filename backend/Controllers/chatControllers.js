@@ -2,18 +2,31 @@ const asyncHandler = require("express-async-handler");
 const Chat = require('../models/chatModel');
 const User = require("../models/userModel");
 const Message = require('../models/messageModel');
-const crypto = require('crypto');
-const dotenv = require("dotenv");
+const { decryptMessage } = require("../utils/messageCrypto");
+const { ensureAssistantChat } = require("../services/aiAssistantService");
 
-dotenv.config();
-// Encryption key (you can generate a secure key using a key generation function)
-const encryptionKey = process.env.ENCRYPTION_KEY;
+const findMemberChat = (chatId, userId) => Chat.findOne({ _id: chatId, users: userId });
+const isValidWallpaper = (value) => {
+    if (typeof value !== "string" || value.length > 2048) return false;
+    if (/^#[0-9a-f]{6}$/i.test(value)) return true;
+    try {
+        return new URL(value).protocol === "https:";
+    } catch {
+        return false;
+    }
+};
 
 const accessChat = asyncHandler(async (req, res) => {
     const { userId } = req.body;
     if (!userId) {
         console.log("UserId param not sent with request");
         return res.sendStatus(400);
+    }
+    if (String(userId) === String(req.user._id)) {
+        return res.status(400).json({ message: "Cannot create a chat with yourself" });
+    }
+    if (!await User.exists({ _id: userId })) {
+        return res.status(404).json({ message: "User not found" });
     }
 
     var isChat = await Chat.find({
@@ -23,12 +36,12 @@ const accessChat = asyncHandler(async (req, res) => {
             { users: { $elemMatch: { $eq: userId } } },
         ]
     })
-        .populate("users", "-password")
+        .populate("users", "name pic email isBot")
         .populate("latestMessage");
 
     isChat = await User.populate(isChat, {
         path: 'latestMessage.sender',
-        select: 'name pic email'
+        select: 'name pic email isBot'
     });
 
     if (isChat.length > 0) {
@@ -44,7 +57,7 @@ const accessChat = asyncHandler(async (req, res) => {
             const createdChat = await Chat.create(chatData);
             const FullChat = await Chat.findOne({ _id: createdChat._id }).populate(
                 "users",
-                "-password"
+                "name pic email"
             );
             res.status(200).send(FullChat);
         } catch (error) {
@@ -54,27 +67,18 @@ const accessChat = asyncHandler(async (req, res) => {
     }
 });
 
-function decryptMessage(encryptedMessage) {
-    const iv = Buffer.from(encryptedMessage.slice(0, 32), 'hex'); // Extract the IV
-    const encrypted = encryptedMessage.slice(32);
-
-    const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKey, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-}
-
 const fetchChats = asyncHandler(async (req, res) => {
     try {
+        if (process.env.OPENAI_API_KEY) await ensureAssistantChat(req.user._id);
         Chat.find({ users: { $elemMatch: { $eq: req.user._id } } })
-            .populate("users", "-password")
-            .populate("groupAdmin", "-password")
+            .populate("users", "name pic email isBot")
+            .populate("groupAdmin", "name pic email")
             .populate("latestMessage")
             .sort({ updatedAt: -1 })
             .then(async (results) => {
                 results = await User.populate(results, {
                     path: "latestMessage.sender",
-                    select: "name pic email",
+                    select: "name pic email isBot",
                 });
                 results.forEach((x) => {
                     if (x.latestMessage) {
@@ -99,7 +103,12 @@ const createGroupChat = asyncHandler(async (req, res) => {
     if (!req.body.users || !req.body.name) {
         return res.status(400).send({ message: "Please fill all the fields" });
     }
-    var users = JSON.parse(req.body.users);
+    let users;
+    try {
+        users = JSON.parse(req.body.users);
+    } catch {
+        return res.status(400).json({ message: "Invalid users list" });
+    }
 
     if (users.length < 2) {
         return res
@@ -107,7 +116,11 @@ const createGroupChat = asyncHandler(async (req, res) => {
             .send("Atleast 2 users are required to form a group chat");
     }
 
-    users.push(req.user);
+    users = [...new Set(users.map(String).filter(id => id !== String(req.user._id)))];
+    if (await User.countDocuments({ _id: { $in: users }, isBot: { $ne: true } }) !== users.length) {
+        return res.status(400).json({ message: "One or more users are invalid" });
+    }
+    users.push(req.user._id);
 
     try {
         const groupChat = await Chat.create({
@@ -118,8 +131,15 @@ const createGroupChat = asyncHandler(async (req, res) => {
         });
 
         const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
-            .populate("users", "-password")
-            .populate("groupAdmin", "-password");
+            .populate("users", "name pic email isBot")
+            .populate("groupAdmin", "name pic email");
+
+        const io = req.app.get("io");
+        fullGroupChat.users.forEach(user => {
+            if (String(user._id) !== String(req.user._id)) {
+                io.to(String(user._id)).emit("group formed", fullGroupChat);
+            }
+        });
 
         res.status(200).json(fullGroupChat);
     } catch (error) {
@@ -131,8 +151,8 @@ const createGroupChat = asyncHandler(async (req, res) => {
 const renameGroup = asyncHandler(async (req, res) => {
     const { chatId, chatName } = req.body;
 
-    const updatedChat = await Chat.findByIdAndUpdate(
-        chatId,
+    const updatedChat = await Chat.findOneAndUpdate(
+        { _id: chatId, isGroupChat: true, groupAdmin: req.user._id },
         {
             chatName
         },
@@ -140,8 +160,8 @@ const renameGroup = asyncHandler(async (req, res) => {
             new: true
         }
     )
-        .populate("users", "-password")
-        .populate("groupAdmin", "-password");
+        .populate("users", "name pic email isBot")
+        .populate("groupAdmin", "name pic email");
 
     if (!updatedChat) {
         res.status(400);
@@ -153,17 +173,19 @@ const renameGroup = asyncHandler(async (req, res) => {
 
 const addToGroup = asyncHandler(async (req, res) => {
     const { chatId, userId } = req.body;
+    if (!await User.exists({ _id: userId })) return res.status(404).json({ message: "User not found" });
 
-    const added = await Chat.findByIdAndUpdate(chatId,
+    const added = await Chat.findOneAndUpdate(
+        { _id: chatId, isGroupChat: true, groupAdmin: req.user._id },
         {
-            $push: { users: userId },
+            $addToSet: { users: userId },
         },
         {
             new: true
         }
     )
-        .populate("users", "-password")
-        .populate("groupAdmin", "-password");
+        .populate("users", "name pic email isBot")
+        .populate("groupAdmin", "name pic email");
 
     if (!added) {
         res.status(400);
@@ -175,8 +197,12 @@ const addToGroup = asyncHandler(async (req, res) => {
 
 const removeFromGroup = asyncHandler(async (req, res) => {
     const { chatId, userId } = req.body;
+    if (String(userId) === String(req.user._id)) {
+        return res.status(400).json({ message: "Transfer administration before leaving the group" });
+    }
 
-    const removed = await Chat.findByIdAndUpdate(chatId,
+    const removed = await Chat.findOneAndUpdate(
+        { _id: chatId, isGroupChat: true, groupAdmin: req.user._id },
         {
             $pull: { users: userId },
         },
@@ -184,8 +210,8 @@ const removeFromGroup = asyncHandler(async (req, res) => {
             new: true
         }
     )
-        .populate("users", "-password")
-        .populate("groupAdmin", "-password");
+        .populate("users", "name pic email isBot")
+        .populate("groupAdmin", "name pic email");
 
     if (!removed) {
         res.status(400);
@@ -197,8 +223,17 @@ const removeFromGroup = asyncHandler(async (req, res) => {
 
 const deleteChat = asyncHandler(async (req, res) => {
     try {
-        const deletedChat = await Chat.findByIdAndDelete(req.params.chatId);
+        const chat = await findMemberChat(req.params.chatId, req.user._id);
+        if (!chat) return res.status(404).json({ success: false, error: 'Chat not found' });
+        if (chat.isGroupChat && String(chat.groupAdmin) !== String(req.user._id)) {
+            return res.status(403).json({ success: false, error: 'Only the group admin can delete this chat' });
+        }
+        const deletedChat = await Chat.findByIdAndDelete(chat._id);
         await Message.deleteMany({ chat: req.params.chatId });
+        const io = req.app.get("io");
+        chat.users.forEach(userId => {
+            if (String(userId) !== String(req.user._id)) io.to(String(userId)).emit("remove chat", chat);
+        });
         res.status(200).json({ success: true, data: deletedChat });
     } catch (err) {
         res.status(500).json({ success: false, error: 'Server Error' });
@@ -206,9 +241,9 @@ const deleteChat = asyncHandler(async (req, res) => {
 });
 
 const muteChat = asyncHandler(async (req, res) => {
-    const chat = await Chat.findById(req.params.chatId);
+    const chat = await findMemberChat(req.params.chatId, req.user._id);
     if (!chat) {
-        return next(new ErrorResponse(`Chat not found with id of ${req.params.chatId}`, 404));
+        return res.status(404).json({ message: 'Chat not found' });
     }
     if (chat.mutedUsers.includes(req.user.id)) {
         chat.mutedUsers = chat.mutedUsers.filter(user => user.toString() !== req.user.id);
@@ -230,10 +265,11 @@ const mutedChats = asyncHandler(async (req, res) => {
 
 const updateWallpaper = asyncHandler(async (req, res) => {
     const { chatId } = req.params;
-    const { userId, wallpaperUrl } = req.body;
+    const { wallpaperUrl } = req.body;
+    if (!isValidWallpaper(wallpaperUrl)) return res.status(400).json({ message: "Invalid wallpaper" });
 
     try {
-        const chat = await Chat.findById(chatId);
+        const chat = await findMemberChat(chatId, req.user._id);
 
         if (!chat) {
             return res.status(404).json({ error: 'Chat not found' });
@@ -260,6 +296,7 @@ const updateWallpaper = asyncHandler(async (req, res) => {
 
 const updateWallpaperForAllChats = asyncHandler(async (req, res) => {
     const { wallpaperUrl } = req.body;
+    if (!isValidWallpaper(wallpaperUrl)) return res.status(400).json({ message: "Invalid wallpaper" });
     try {
         const chats = await Chat.find({ users: { $elemMatch: { $eq: req.user._id } } });
 

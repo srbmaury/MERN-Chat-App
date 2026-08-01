@@ -5,8 +5,9 @@ const otpSchema = new Schema({
   email: {
     type: String,
     required: true,
+    index: true,
   },
-  otp: {
+  otpHash: {
     type: String,
     required: true,
   },

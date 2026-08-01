@@ -1,27 +1,27 @@
 const { google } = require('googleapis');
 const asyncHandler = require("express-async-handler");
-const dotenv = require("dotenv");
-dotenv.config();
-
 const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-const client = new google.auth.JWT(
-    process.env.CLIENT_EMAIL,
-    null,
-    process.env.PRIVATE_KEY.replace(/\\n/g, '\n'),
-    ['https://www.googleapis.com/auth/spreadsheets']
-);
-
-client.authorize(err => {
-    if (err) {
-        console.error('Error authenticating:', err);
-    } else {
-        console.log('Authentication successful!');
+const createClient = () => {
+    if (!process.env.CLIENT_EMAIL || !process.env.PRIVATE_KEY || !spreadsheetId) {
+        const error = new Error("Google Sheets integration is not configured");
+        error.statusCode = 503;
+        throw error;
     }
-});
+    return new google.auth.JWT(
+        process.env.CLIENT_EMAIL,
+        null,
+        process.env.PRIVATE_KEY.replace(/\\n/g, '\n'),
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+};
 
 const saveToSheet = asyncHandler(async (req, res) => {
     try {
+        if (!req.user.isAdmin) {
+            return res.status(403).json({ error: "Only administrators can export review data" });
+        }
+        const client = createClient();
         let { dataToInsert } = req.body;
         if (!Array.isArray(dataToInsert)) {
             dataToInsert = [dataToInsert];

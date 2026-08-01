@@ -13,6 +13,9 @@
 
 # production
 /build
+/frontend/build
+/frontend/dist
+/tmp
 
 # misc
 .DS_Store

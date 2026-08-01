@@ -1,13 +1,11 @@
 const asyncHandler = require("express-async-handler");
 const Status = require("../models/statusModel");
-const User = require("../models/userModel");
-const cron = require('node-cron');
 
 // Create a new status
 const createStatus = asyncHandler(async (req, res) => {
     const { text, media } = req.body;
 
-    if (!text || !media) {
+        if (!text && !media) {
         console.log("Invalid data passed into request");
         return res.sendStatus(400);
     }
@@ -62,14 +60,14 @@ const deleteStatus = asyncHandler(async (req, res) => {
     const { statusId } = req.params;
 
     try {
-        const status = await Status.findById(statusId);
+        const status = await Status.findOne({ _id: statusId, user: req.user._id });
 
         if (!status) {
             console.log("Status not found");
             return res.sendStatus(404);
         }
 
-        await status.remove();
+        await status.deleteOne();
 
         res.sendStatus(204);
     } catch (error) {
@@ -77,19 +75,4 @@ const deleteStatus = asyncHandler(async (req, res) => {
     }
 });
 
-const deleteOldStatuses = async () => {
-    try {
-        const twentyFourHoursAgo = moment().subtract(24, "hours");
-        const oldStatuses = await Status.find({ createdAt: { $lt: twentyFourHoursAgo } });
-
-        for (const status of oldStatuses) {
-            await status.remove();
-        }
-        console.log(`${oldStatuses.length} old statuses have been deleted.`);
-    } catch (error) {
-        console.error("Error deleting old statuses:", error);
-    }
-};
-
-cron.schedule("0 0 * * *", deleteOldStatuses);
 module.exports = { createStatus, getStatuses, getStatusById, deleteStatus };

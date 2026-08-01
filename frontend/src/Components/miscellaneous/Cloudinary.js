@@ -24,6 +24,7 @@ const uploadMedia = async (media, setMedia, setLoading, toast) => {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
+                withCredentials: true,
             };
 
             const response = await axios.post('/api/upload', formData, config);

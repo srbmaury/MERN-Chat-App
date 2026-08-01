@@ -2,7 +2,6 @@ import { Button, FormControl, FormLabel, Input, InputGroup, InputRightElement, u
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
-import Upload from '../miscellaneous/Cloudinary';
 
 const SignUp = () => {
     const [show, setShow] = useState(false);
@@ -10,7 +9,6 @@ const SignUp = () => {
     const [email, setEmail] = useState();
     const [password, setPassword] = useState();
     const [confirmpassword, setConfirmpassword] = useState();
-    const [pic, setPic] = useState();
     const [loading, setLoading] = useState(false);
     const toast = useToast();
     const history = useHistory();
@@ -53,7 +51,6 @@ const SignUp = () => {
                     name,
                     email,
                     password,
-                    pic,
                 },
                 config
             );
@@ -128,16 +125,6 @@ const SignUp = () => {
                         </Button>
                     </InputRightElement>
                 </InputGroup>
-            </FormControl>
-
-            <FormControl id="pic">
-                <FormLabel>Upload your Picture</FormLabel>
-                    <Input
-                        type="file"
-                        p={1.5}
-                        accept="image/*"
-                        onChange={(e) => Upload(e.target.files[0], setPic, setLoading)}
-                    />
             </FormControl>
 
             <Button

@@ -1,24 +1,23 @@
 import { Avatar, Box, Image, MenuDivider, MenuItem, MenuList, Text, Tooltip, useToast } from '@chakra-ui/react'
 import React, { useState, useEffect } from 'react'
 import ScrollableFeed from 'react-scrollable-feed'
-import { formatDate, isFirstMessageofDay, isLastMessage, isSameSender, isSameSenderMargin } from '../config/ChatLogics'
+import { formatDate, formatTime, isFirstMessageofDay, isLastMessage, isSameSender, isSameSenderMargin } from '../config/ChatLogics'
 import { ChatState } from '../Context/ChatProvider'
 import axios from 'axios'
-import io from 'socket.io-client';
+import { getSocket } from '../config/socket';
 import ForwardModal from './miscellaneous/ForwardModal'
 import { ContextMenu } from 'chakra-ui-contextmenu'
 import '../App.css'
 
-const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket;
 
 const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToReply, inputRef }) => {
-    const { user, selectedChat } = ChatState();
-    const [forwardModalOpen, setForwardModalOpen] = useState(false);
+    const { user, selectedChat, setChats } = ChatState();
+    const [forwardMessageId, setForwardMessageId] = useState(null);
     const toast = useToast();
 
     useEffect(() => {
-        socket = io(ENDPOINT);
+        socket = getSocket(user.token);
         socket.emit("setup", user);
     }, [user]);
 
@@ -32,9 +31,12 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                 },
             };
             const { data } = await axios.delete(`/api/message/${messageId}`, config);
-            const chat = data.chat;
-            socket.emit('deleted message', chat, message);
             setMessages(messages.filter(m => m._id !== messageId));
+            if (data.chat) {
+                setChats(currentChats => currentChats.map(chat =>
+                    chat._id === data.chat._id ? data.chat : chat
+                ));
+            }
         } catch (error) {
             toast({
                 title: 'Error Occured!',
@@ -48,12 +50,14 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
     }
 
     useEffect(() => {
-        socket.on('new latest message', (particularChat, message) => {
+        const onLatestMessage = (particularChat, message) => {
             if (user._id !== message.sender._id && selectedChat._id === particularChat._id) {
                 setMessages(messages.filter(m => m._id !== message._id));
             }
-        });
-    });
+        };
+        socket?.on('new latest message', onLatestMessage);
+        return () => socket?.off('new latest message', onLatestMessage);
+    }, [messages, selectedChat, setMessages, user._id]);
 
     const scroll = (id) => {
         const targetSpan = document.getElementById(id);
@@ -127,7 +131,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                 }
 
                 {messages && messages.map((m, i) => (
-                    <ForwardModal key={m._id} content={m.content} media={m.media} messages={messages} setMessages={setMessages} forwardModalOpen={forwardModalOpen} setForwardModalOpen={setForwardModalOpen}>
+                    <ForwardModal key={m._id} content={m.content} media={m.media} messages={messages} setMessages={setMessages} forwardModalOpen={forwardMessageId === m._id} setForwardModalOpen={() => setForwardMessageId(null)}>
                         <span key={m._id}>
                             {
                                 isFirstMessageofDay(messages, m, i) &&
@@ -186,7 +190,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                                                 </MenuItem>
                                             </span>}
                                             <MenuDivider />
-                                            <MenuItem onClick={() => setForwardModalOpen(true)}>
+                                            <MenuItem onClick={() => setForwardMessageId(m._id)}>
                                                 Forward
                                             </MenuItem>
                                             {m.sender._id === user._id && <span><MenuDivider />
@@ -250,7 +254,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                                                 {m.content && m.content}
                                                 <span
                                                     style={{ fontSize: '10px', marginLeft: '4px', color: '#555' }}>
-                                                    {m.createdAt.toString().slice(11, 16)}
+                                                    {formatTime(m.createdAt)}
                                                 </span>
                                             </span>
                                     }

@@ -33,17 +33,14 @@ import ProfileModal from './miscellaneous/ProfileModal';
 import UpdateGroupChatModal from './miscellaneous/UpdateGroupChatModal';
 import axios from 'axios';
 import ScrollableChat from './ScrollableChat';
-import animationData from '../animations/typing.json'
-import io from 'socket.io-client';
-import Lottie from 'react-lottie';
+import { getSocket } from '../config/socket';
 import { IoMdSend } from 'react-icons/io';
 import { GrAttachment } from 'react-icons/gr';
 import Upload from './miscellaneous/Cloudinary';
 import ChangeWallpaper from './ChangeWallpaper';
-// import EmojiPicker from './EmojiPicker';
+import EmojiPicker from './EmojiPicker';
 import { FaSmile } from 'react-icons/fa';
 
-const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -65,15 +62,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const [ModalTitle, setModalTitle] = useState();
     const [foulMessage, setFoulMessage] = useState('');
     const { isOpen, onOpen, onClose } = useDisclosure();
-
-    const defaultOptions = {
-        loop: true,
-        autoplay: true,
-        animationData: animationData,
-        rendererSettings: {
-            preserveAspectRatio: "xMidYMid slice",
-        },
-    };
 
     const { user, selectedChat, setSelectedChat, notification, setNotification, setNewLatestMessage, setGameStatus, setGameRequestTime } = ChatState();
 
@@ -114,7 +102,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, [user.token, selectedChat, toast]);
 
     useEffect(() => {
-        socket = io(ENDPOINT);
+        socket = getSocket(user.token);
         socket.emit("setup", user);
         socket.on('connected', () => setSocketConnected(true));
         socket.on('typing', () => setIsTyping(true));
@@ -135,7 +123,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, [user._id, selectedChat, fetchMessages]);
 
     useEffect(() => {
-        socket.on('message received', (newMessageReceived) => {
+        const onMessageReceived = (newMessageReceived) => {
             if (!selectedChatCompare || selectedChatCompare._id !== newMessageReceived.chat._id) {
                 let mutedChats = JSON.parse(localStorage.getItem("mutedChats")) || [];
                 if (mutedChats.includes(newMessageReceived.chat._id)) return;
@@ -146,8 +134,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             } else {
                 setMessages([...messages, newMessageReceived]);
             }
-        });
-    });
+        };
+        socket?.on('message received', onMessageReceived);
+        return () => socket?.off('message received', onMessageReceived);
+    }, [fetchAgain, messages, notification, setFetchAgain, setNotification]);
 
     const sendMessage = async event => {
         if (newMessage === '/play' && !selectedChat.isGroupChat) {
@@ -161,28 +151,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             socket.emit('stop typing', selectedChat._id);
             setFoulMessage(newMessage);
             try {
-                const { data } = await axios.post('http://127.0.0.1:8000/api/predict', { text: newMessage });
-                if (data.prediction !== 'Neither') {
-                    const config = {
-                        headers: {
-                            'Content-type': 'application/json',
-                            Authorization: `Bearer ${user.token}`,
-                        },
-                    };
-                    setModalTitle(data.prediction);
-                    onOpen();
-                    try {
-                        await axios.post('/api/user/foulsIncrease', {}, config);
-                    } catch (error) {
-                        console.log(error.response.data.error);
-                    }
-                } else {
-                    setFoulMessage('');
-                }
-            } catch (error) {
-                console.log(error);
-            }
-            try {
                 const config = {
                     headers: {
                         'Content-type': 'application/json',
@@ -192,7 +160,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 setNewMessage('');
                 setMedia('');
                 setMessageToReply('');
-                const { data } = await axios.post(
+                const response = await axios.post(
                     '/api/message',
                     {
                         content: newMessage,
@@ -202,8 +170,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     },
                     config
                 );
+                const { data } = response;
+                const moderationCategory = response.headers['x-moderation-category'];
+                if (moderationCategory && moderationCategory !== 'Neither') {
+                    setModalTitle(moderationCategory);
+                    onOpen();
+                } else {
+                    setFoulMessage('');
+                }
 
-                socket.emit('new message', data);
                 setNewLatestMessage(data);
                 setMessages([...messages, data]);
             } catch (error) {
@@ -287,6 +262,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         setNewMessage('');
         setMedia('');
         setMessageToReply('');
+        setEmojiDisplay(false);
     }, [selectedChat]);
 
     return (
@@ -295,7 +271,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
             {selectedChat ? (
                 <>
-                    <Text
+                    <Box
                         fontSize={{ base: '28px', md: '30px' }}
                         pb={3}
                         px={2}
@@ -312,7 +288,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         />
                         {!selectedChat.isGroupChat ? (
                             <>
-                                {getSender(user, selectedChat.users)}
+                                <Box>
+                                    {getSender(user, selectedChat.users)}
+                                    {getSenderFull(user, selectedChat.users)?.isBot && (
+                                        <Text as="span" ml={2} fontSize="xs" color="teal.500">AI</Text>
+                                    )}
+                                </Box>
                                 <ProfileModal user={getSenderFull(user, selectedChat.users)} />
                             </>
                         ) : (
@@ -324,7 +305,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 />
                             </>
                         )}
-                    </Text>
+                    </Box>
                     <Box
                         display={'flex'}
                         flexDir="column"
@@ -419,25 +400,19 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                 />
                             </Box>
                         }
-                        {/*
-                        {emojiDisplay &&
-                            <EmojiPicker
-                                emojiDisplay={emojiDisplay}
-                                setEmojiDisplay={setEmojiDisplay}
-                                newMessage={newMessage}
-                                setNewMessage={setNewMessage}
-                                inputRef={inputRef}
-                            />
-                        }
-                        */}
-                        <FormControl isRequired mt={3}>
+                        <Box position="relative" width="100%">
+                            {emojiDisplay &&
+                                <EmojiPicker
+                                    setEmojiDisplay={setEmojiDisplay}
+                                    newMessage={newMessage}
+                                    setNewMessage={setNewMessage}
+                                    inputRef={inputRef}
+                                />
+                            }
+                            <FormControl isRequired mt={3}>
                             {istyping ?
                                 <div>
-                                    <Lottie
-                                        options={defaultOptions}
-                                        width={70}
-                                        style={{ marginBottom: 15, marginLeft: 0 }}
-                                    />
+                                    <Text fontSize="sm" color="gray.500" mb={2}>Typing…</Text>
                                 </div>
                                 : <></>}
                             <InputGroup>
@@ -448,7 +423,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                     <InputLeftAddon style={{ width: '20px', height: (newMessage.split('\n').length - 1) * 20 + 'px', maxHeight: "160px", backgroundColor: "transparent", borderColor: "transparent" }} cursor="pointer">
                                         <span ></span>
                                     </InputLeftAddon>
-                                    <InputLeftAddon pointerEvents="auto" cursor="pointer" onClick={handleEmojiClick}>
+                                    <InputLeftAddon
+                                        as="button"
+                                        type="button"
+                                        aria-label="Open emoji picker"
+                                        pointerEvents="auto"
+                                        cursor="pointer"
+                                        onClick={handleEmojiClick}
+                                    >
                                         <Icon as={FaSmile} color="gray.500" />
                                     </InputLeftAddon>
                                 </Box>}
@@ -486,21 +468,26 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                             </label>
                                             <Input type="file" id="fileInput" onChange={(e) => Upload(e.target.files[0], setMedia, setSendPicLoading)} sx={{ display: "none" }} />
                                         </InputRightAddon>
-                                        <InputRightAddon>
+                                        <InputRightAddon
+                                            as="button"
+                                            type="button"
+                                            aria-label="Send message"
+                                            onClick={sendMessage}
+                                        >
                                             {sendPicLoading ? (
                                                 <CircularProgress isIndeterminate size="30px" color="#004D40" />
                                             ) : (
                                                 <IoMdSend
                                                     color="#004D40"
                                                     cursor="pointer"
-                                                    onClick={sendMessage}
                                                 />
                                             )}
                                         </InputRightAddon>
                                     </Box>
                                 </Box>
                             </InputGroup>
-                        </FormControl>
+                            </FormControl>
+                        </Box>
                     </Box>
                 </>
             ) : (

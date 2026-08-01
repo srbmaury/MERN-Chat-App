@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ChatState } from '../../Context/ChatProvider';
-import { io } from 'socket.io-client';
+import { getSocket } from '../../config/socket';
 import { Box, Button, Center, Text, Grid, GridItem } from '@chakra-ui/react';
 
-const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket;
 
 const TicTacToe = ({ myTurn, setMyTurn }) => {
@@ -15,7 +14,7 @@ const TicTacToe = ({ myTurn, setMyTurn }) => {
     const { user, chats, selectedChat, setPlayArenaVisibility } = ChatState();
 
     useEffect(() => {
-        socket = io(ENDPOINT);
+        socket = getSocket(user.token);
         socket.emit("setup", user);
         setIsTimerActive(myTurn);
     }, [user, myTurn]);
@@ -52,13 +51,15 @@ const TicTacToe = ({ myTurn, setMyTurn }) => {
     }, [timer, isTimerActive, setPlayArenaVisibility]);
 
     useEffect(() => {
-        socket.on('your turn', (newBoard, xIsNext) => {
+        const onYourTurn = (newBoard, xIsNext) => {
             setBoard(newBoard);
             setXIsNext(!xIsNext);
             setMyTurn(true);
             setIsTimerActive(true);
-        });
-    });
+        };
+        socket?.on('your turn', onYourTurn);
+        return () => socket?.off('your turn', onYourTurn);
+    }, [setMyTurn]);
 
     const renderSquare = (index) => {
         const squareStyle = {

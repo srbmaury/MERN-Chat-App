@@ -2,26 +2,22 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const generateToken = require("../config/generateToken");
 const nodemailer = require("nodemailer");
-const dotenv = require("dotenv");
 const path = require('path');
 const fs = require('fs').promises;
-
-dotenv.config();
+const crypto = require("crypto");
 
 const myEmailId = process.env.EMAIL_ID;
 const emailPW = process.env.PASSWORD;
 
 const generateVerificationToken = () => {
-    const length = 10;
-    const characters =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let token = "";
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        token += characters.charAt(randomIndex);
-    }
-    return token;
+    return crypto.randomBytes(32).toString("hex");
 };
+
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const secureCookies = process.env.COOKIE_SECURE
+    ? process.env.COOKIE_SECURE === "true"
+    : (process.env.API_BASE_URL || "").startsWith("https://");
 
 const sendVerificationEmail = async (email, verificationToken) => {
     const transporter = nodemailer.createTransport({
@@ -33,10 +29,11 @@ const sendVerificationEmail = async (email, verificationToken) => {
     });
 
     try {
-        const __dirname1 = path.resolve();
-        const templatePath = path.join(__dirname1, 'backend', 'templates', 'send-verification-email-success.html');
+        const templatePath = path.join(__dirname, '..', 'templates', 'send-verification-email-success.html');
         const emailTemplate = await fs.readFile(templatePath, 'utf8');
-        const html = emailTemplate.replace('{{verificationToken}}', verificationToken);
+        const apiBaseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const verificationUrl = `${apiBaseUrl}/api/user/verify/${verificationToken}`;
+        const html = emailTemplate.replace('{{verificationUrl}}', verificationUrl);
 
         const mailOptions = {
             from: myEmailId,
@@ -54,14 +51,22 @@ const sendVerificationEmail = async (email, verificationToken) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-    const { name, email, password, pic } = req.body;
+    const { name, email, password } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!name || !email || !password) {
+    if (!name?.trim() || !normalizedEmail || !password) {
         res.status(400);
         throw new Error("Please Enter all the fields");
     }
+    if (name.trim().length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        return res.status(400).json({ message: "Enter a valid name and email address" });
+    }
 
-    const userExists = await User.findOne({ email });
+    if (password.length < 8) {
+        return res.status(400).json({ message: "Password must contain at least 8 characters" });
+    }
+
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
         res.status(400);
@@ -69,27 +74,21 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const verificationToken = generateVerificationToken();
+    const verificationTokenHash = hashToken(verificationToken);
 
-    const isEmailSent = await sendVerificationEmail(email, verificationToken);
+    const isEmailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
 
     if (isEmailSent) {
         const user = await User.create({
-            name,
-            email,
+            name: name.trim(),
+            email: normalizedEmail,
             password,
-            pic,
-            verificationToken,
+            verificationToken: verificationTokenHash,
+            verificationTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });
 
         if (user) {
-            res.status(201).json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                pic: user.pic,
-                isEmailVerified: user.isEmailVerified,
-                token: generateToken(user._id),
-            });
+            res.status(201).json({ message: "Registration successful. Please verify your email." });
         } else {
             res.status(400);
             throw new Error("Failed to create the user");
@@ -104,7 +103,10 @@ const verifyEmail = asyncHandler(async (req, res) => {
     try {
         const { token } = req.params;
 
-        const user = await User.findOne({ verificationToken: token });
+        const user = await User.findOne({
+            verificationToken: hashToken(token),
+            verificationTokenExpiresAt: { $gt: new Date() },
+        });
 
         if (!user) {
             res.status(404).json({ error: "Invalid verification token" });
@@ -112,11 +114,13 @@ const verifyEmail = asyncHandler(async (req, res) => {
         }
 
         user.isEmailVerified = true;
+        user.verificationToken = undefined;
+        user.verificationTokenExpiresAt = undefined;
         await user.save();
 
-        const __dirname1 = path.resolve();
-        const successHtml = await fs.readFile(path.join(__dirname1, 'backend', 'templates', 'verification-success.html'), 'utf8');
-        const failureHtml = await fs.readFile(path.join(__dirname1, 'backend', 'templates', 'verification-failure.html'), 'utf8');
+        const successTemplate = await fs.readFile(path.join(__dirname, '..', 'templates', 'verification-success.html'), 'utf8');
+        const successHtml = successTemplate.replace('{{clientUrl}}', process.env.CLIENT_APP_URL || 'http://localhost:3000');
+        const failureHtml = await fs.readFile(path.join(__dirname, '..', 'templates', 'verification-failure.html'), 'utf8');
 
         if (user.isEmailVerified) {
             res.send(successHtml);
@@ -132,21 +136,38 @@ const verifyEmail = asyncHandler(async (req, res) => {
 const authUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    if (typeof email !== "string" || typeof password !== "string") {
+        return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+
+    if (user?.isBot) return res.status(401).json({ message: "Invalid Email or Password" });
 
     if (user && (await user.matchPassword(password))) {
+        if (user.blocked) {
+            return res.status(403).json({ message: "Your account is blocked. Please contact support." });
+        }
         if (user.isEmailVerified) {
+            const token = generateToken(user._id);
+            res.cookie("authToken", token, {
+                httpOnly: true,
+                secure: secureCookies,
+                sameSite: process.env.COOKIE_SAME_SITE || "lax",
+                maxAge: 30 * 24 * 60 * 60 * 1000,
+                path: "/",
+            });
             res.json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 pic: user.pic,
                 isEmailVerified: user.isEmailVerified,
-                token: generateToken(user._id),
                 blocked: user.blocked,
                 isAdmin: user.isAdmin,
             });
         } else {
+            res.status(403);
             throw new Error("Please verify your email first");
         }
     } else {
@@ -155,25 +176,47 @@ const authUser = asyncHandler(async (req, res) => {
     }
 });
 
+const logoutUser = asyncHandler(async (_req, res) => {
+    res.clearCookie("authToken", {
+        httpOnly: true,
+        secure: secureCookies,
+        sameSite: process.env.COOKIE_SAME_SITE || "lax",
+        path: "/",
+    });
+    res.status(204).send();
+});
+
 const allUsers = asyncHandler(async (req, res) => {
-    const keyword = req.query.search
+    const search = typeof req.query.search === "string" ? escapeRegExp(req.query.search.slice(0, 100)) : "";
+    const keyword = search
         ? {
               $or: [
-                  { name: { $regex: req.query.search, $options: "i" } },
-                  { email: { $regex: req.query.search, $options: "i" } },
+                  { name: { $regex: search, $options: "i" } },
+                  { email: { $regex: search, $options: "i" } },
               ],
           }
         : {};
 
-    const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
+    const users = await User.find(keyword)
+        .find({ _id: { $ne: req.user._id } })
+        .select("_id name email pic isBot");
     res.send(users);
 });
 
 const updateProfilePicture = asyncHandler(async (req, res) => {
     try {
+        let pictureUrl;
+        try {
+            pictureUrl = new URL(req.body.pic);
+        } catch {
+            return res.status(400).json({ message: "A valid profile picture URL is required" });
+        }
+        if (pictureUrl.protocol !== "https:") {
+            return res.status(400).json({ message: "Profile pictures must use HTTPS" });
+        }
         const user = await User.findByIdAndUpdate(
-            req.body.id,
-            { pic: req.body.pic },
+            req.user._id,
+            { pic: pictureUrl.toString() },
             { new: true }
         );
         res.status(201).json({
@@ -181,40 +224,20 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
             name: user.name,
             email: user.email,
             pic: user.pic,
-            token: generateToken(user._id),
+            isEmailVerified: user.isEmailVerified,
+            blocked: user.blocked,
+            isAdmin: user.isAdmin,
         });
     } catch (err) {
-        res.status(500).json({ id: req.body.id, error: err.message });
-    }
-});
-
-const foulsIncrease = asyncHandler(async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        if (user.blocked) {
-            return res.status(400).json({ error: "User is already blocked" });
-        }
-
-        user.fouls += 1;
-        if (user.fouls >= 10) {
-            user.blocked = true;
-        }
-
-        await user.save();
-
-        res.status(200).json({ message: "Foul increased by 1" });
-    } catch (error) {
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: err.message });
     }
 });
 
 const submitForReview = asyncHandler(async (req, res) => {
     const { foulMessage } = req.body;
+    if (typeof foulMessage !== "string" || !foulMessage.trim() || foulMessage.length > 10_000) {
+        return res.status(400).json({ message: "A valid message is required" });
+    }
     try {
         const user = await User.findById(req.user._id);
 
@@ -222,7 +245,7 @@ const submitForReview = asyncHandler(async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        user.submittedForReview.push(foulMessage);
+        if (!user.submittedForReview.includes(foulMessage)) user.submittedForReview.push(foulMessage);
 
         await user.save();
 
@@ -276,21 +299,21 @@ const review = asyncHandler(async (req, res) => {
         }
 
         const { messages } = req.body;
-        const users = await User.find({});
+        if (!Array.isArray(messages) || messages.length > 100) {
+            return res.status(400).json({ message: "Invalid review batch" });
+        }
 
         for (const message of messages) {
+            if (!message.userId || typeof message.message !== "string") continue;
             const reviewMessage = message.message;
-            for (const user of users) {
-                const { submittedForReview, fouls } = user;
-                const messageIndex = submittedForReview.indexOf(reviewMessage);
-                if (messageIndex !== -1) {
-                    submittedForReview.splice(messageIndex, 1);
-                    user.submittedForReview = submittedForReview;
-                    if (message.category === 2)
-                        user.fouls = Math.max(0, fouls - 1);
-                    if (user.fouls < 10) user.blocked = false;
-                    await user.save();
-                }
+            const user = await User.findById(message.userId);
+            if (!user) continue;
+            const messageIndex = user.submittedForReview.indexOf(reviewMessage);
+            if (messageIndex !== -1) {
+                user.submittedForReview.splice(messageIndex, 1);
+                if (message.category === 2) user.fouls = Math.max(0, user.fouls - 1);
+                if (user.fouls < 10) user.blocked = false;
+                await user.save();
             }
         }
         res.status(200).json({ message: "Review completed successfully." });
@@ -306,8 +329,8 @@ module.exports = {
     authUser,
     allUsers,
     updateProfilePicture,
-    foulsIncrease,
     submitForReview,
     fetchSubmitForReview,
     review,
+    logoutUser,
 };

@@ -42,7 +42,7 @@ const ChngeWallpaper = ({ setChangeWallpaperDisplay, setWallPaper, chatId }) => 
         '#98FB98', '#FFEFD5', '#F0E68C', '#DDA0DD', '#D3D3D3', '#CD5C5C',
     ];
 
-    const { user, chats, setChats } = ChatState();
+    const { user, chats } = ChatState();
     const toast = useToast();
 
     const changeWallpaper = async (wallpaperUrl) => {

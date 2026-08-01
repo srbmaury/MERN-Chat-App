@@ -43,7 +43,7 @@ export const isSameUser = (messages, m, i) => {
 };
 
 export const isFirstMessageofDay = (messages, m, i) => {
-    if (i === 0 || m.createdAt.slice(0, 10) !== messages[i - 1].createdAt.slice(0, 10))
+    if (i === 0 || format(new Date(m.createdAt)) !== format(new Date(messages[i - 1].createdAt)))
         return true;
     return false;
 };
@@ -53,38 +53,31 @@ const format = date => {
 };
 
 export const formatDate = (givenDate) => {
+    const messageDate = new Date(givenDate);
     var date = (new Date());
     var today = format(date);
     date.setDate(date.getDate() - 1)
     var yesterday = format(date);
 
-    if (givenDate.slice(0, 10) === today) return "today";
-    if (givenDate.slice(0, 10) === yesterday) return "yesterday";
-    return givenDate.slice(8, 10) + ' ' + checkMonth(givenDate.slice(5, 7).toString()) + ' ' + givenDate.slice(0, 4);
+    if (format(messageDate) === today) return "today";
+    if (format(messageDate) === yesterday) return "yesterday";
+    return messageDate.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" });
 };
+
+export const formatTime = givenDate => new Date(givenDate).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+});
 
 export const formatDate2 = (givenDate) => {
+    const messageDate = new Date(givenDate);
     var date = (new Date());
     var today = format(date);
     date.setDate(date.getDate() - 1)
     var yesterday = format(date);
 
-    if (givenDate.slice(0, 10) === today) return givenDate.slice(11, 16);
-    if (givenDate.slice(0, 10) === yesterday) return "yesterday";
-    return givenDate.slice(8, 10) + ' ' + checkMonth(givenDate.slice(5, 7).toString()) + ' ' + givenDate.slice(0, 4);
+    if (format(messageDate) === today) return formatTime(messageDate);
+    if (format(messageDate) === yesterday) return "yesterday";
+    return messageDate.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" });
 };
-
-const checkMonth = (m) => {
-    if (m === "01") return "january";
-    if (m === "02") return "february";
-    if (m === "03") return "march";
-    if (m === "04") return "april";
-    if (m === "05") return "may";
-    if (m === "06") return "june";
-    if (m === "07") return "july";
-    if (m === "08") return "august";
-    if (m === "09") return "september";
-    if (m === "10") return "october";
-    if (m === "11") return "november";
-    if (m === "12") return "december";
-}

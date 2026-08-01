@@ -9,14 +9,12 @@ import { getSender, getSenderFull } from '../config/ChatLogics';
 import GroupChatModal from './miscellaneous/GroupChatModal';
 import LatestMessage from './LatestMessage';
 import { ContextMenu } from 'chakra-ui-contextmenu';
-import io from 'socket.io-client';
+import { getSocket } from '../config/socket';
 import GameInvitation from './Gamification/GameInvitation';
 import PlayArena from './Gamification/PlayArena';
 
-const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket;
 const MyChats = ({ fetchAgain }) => {
-    const [loggedUser, setLoggedUser] = useState();
     const [prevSelectedChat, setPrevSelectedChat] = useState();
     const [mutedChats, setMutedChats] = useState([]);
     const [statement, setStatement] = useState("");
@@ -29,7 +27,7 @@ const MyChats = ({ fetchAgain }) => {
     const [requestedChat, setRequestedChat] = useState("");
 
     useEffect(() => {
-        socket = io(ENDPOINT);
+        socket = getSocket(user.token);
         socket.emit("setup", user);
     }, [user]);
 
@@ -57,7 +55,6 @@ const MyChats = ({ fetchAgain }) => {
 
     useEffect(() => {
         try {
-            setLoggedUser(JSON.parse(localStorage.getItem('userInfo')));
             fetchChats();
         } catch (error) {
 
@@ -76,7 +73,7 @@ const MyChats = ({ fetchAgain }) => {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${loggedUser.token}`
+                    'Authorization': `Bearer ${user.token}`
                 }
             });
             const data = await response.json();
@@ -88,7 +85,6 @@ const MyChats = ({ fetchAgain }) => {
             if (selectedChat !== undefined && selectedChat !== null && selectedChat._id === chat._id)
                 setSelectedChat();
             setChats(updatedChats);
-            socket.emit('chat deleted', chat);
             return data;
         } catch (err) {
             throw err;
@@ -124,7 +120,7 @@ const MyChats = ({ fetchAgain }) => {
             }
         }
         fetchMutedChats();
-    }, []);
+    }, [user.token]);
 
     const changeMuteStatus = async (chatId) => {
         try {
@@ -160,7 +156,7 @@ const MyChats = ({ fetchAgain }) => {
                 clearTimeout(timeoutId);
             };
         }
-    }, [isOpen]);
+    }, [isOpen, onClose, requestedChat, user]);
 
     useEffect(() => {
         socket.on('received play request', (chat, u) => {
@@ -171,7 +167,7 @@ const MyChats = ({ fetchAgain }) => {
         return () => {
             socket.off('received play request');
         };
-    }, []);
+    }, [onOpen]);
 
     const accept = () => {
         setSelectedChat(requestedChat);
@@ -290,8 +286,8 @@ const MyChats = ({ fetchAgain }) => {
                                                 mr={2}
                                                 size="sm"
                                                 cursor="pointer"
-                                                name={getSender(loggedUser, chat.users, chat)}
-                                                src={chat.isGroupChat ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDZqg5vL6300Pfadt6T_PhpiYSXEn8gosMY-eE7k0FJczKzLA&s' : getSenderFull(loggedUser, chat.users, chat).pic}
+                                                name={getSender(user, chat.users, chat)}
+                                                src={chat.isGroupChat ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDZqg5vL6300Pfadt6T_PhpiYSXEn8gosMY-eE7k0FJczKzLA&s' : getSenderFull(user, chat.users, chat)?.pic}
                                                 marginTop="6px"
                                             />
                                             <Box
@@ -299,7 +295,12 @@ const MyChats = ({ fetchAgain }) => {
                                                 display="inline-block"
                                             >
                                                 {!chat.isGroupChat
-                                                    ? getSender(loggedUser, chat.users, chat)
+                                                    ? <>
+                                                        {getSender(user, chat.users, chat)}
+                                                        {getSenderFull(user, chat.users, chat)?.isBot && (
+                                                            <Box as="span" ml={2} fontSize="xs" color="teal.500">AI</Box>
+                                                        )}
+                                                    </>
                                                     : chat.chatName}
                                                 <LatestMessage currChat={chat} />
                                                 {mutedChats.find(mutedChat => mutedChat._id === chat._id) &&

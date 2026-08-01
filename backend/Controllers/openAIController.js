@@ -1,31 +1,18 @@
-const fetch = require('node-fetch');
-const dotenv = require("dotenv");
-
-dotenv.config();
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const { generateOpenAIResponse } = require("../services/openAIService");
 
 async function generateSmartReply(context) {
-    const prompt = `Generate smart reply for given context:\nContext: ${context}\nSmart Reply:`;
-
-    const response = await fetch('https://api.openai.com/v1/engines/text-davinci-003/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-            prompt,
-            max_tokens: 500,
-        }),
-    });
-
-    const data = await response.json();
-    return data.choices[0].text.trim();
+    return generateOpenAIResponse(
+        String(context).slice(0, 4000),
+        "Generate one concise, natural smart reply. Return only the reply text.",
+        120
+    );
 }
 
 async function smartReply(req, res) {
     const { content } = req.body;
+    if (!content || typeof content !== "string") {
+        return res.status(400).json({ error: "Content is required" });
+    }
     try {
         const smartReply = await generateSmartReply(content);
         res.status(200).json({ smartReply });

@@ -1,10 +1,9 @@
 import { Box, Flex, Image } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
-import io from 'socket.io-client';
+import { getSocket } from '../config/socket';
 import { formatDate2 } from '../config/ChatLogics';
 import { ChatState } from '../Context/ChatProvider';
 
-const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 let socket;
 
 const LatestMessage = ({ currChat }) => {
@@ -12,26 +11,33 @@ const LatestMessage = ({ currChat }) => {
     const [latestMessage, setLatestMessage] = useState(currChat.latestMessage);
 
     useEffect(() => {
-        socket = io(ENDPOINT);
+        setLatestMessage(currChat.latestMessage);
+    }, [currChat.latestMessage]);
+
+    useEffect(() => {
+        socket = getSocket(user.token);
         socket.emit("setup", user);
-        return () => {
-            socket.disconnect();
-        };
     }, [user]);
 
     useEffect(() => {
-        socket.on('message received', (newMessageReceived) => {
+        const onMessageReceived = (newMessageReceived) => {
             const particularChat = newMessageReceived.chat;
             if (currChat._id === particularChat._id) {
                 setLatestMessage(newMessageReceived);
             }
-        });
+        };
 
-        socket.on('new latest message', (particularChat) => {
+        const onLatestMessage = (particularChat) => {
             if (currChat._id === particularChat._id) {
                 setLatestMessage(particularChat.latestMessage);
             }
-        });
+        };
+        socket.on('message received', onMessageReceived);
+        socket.on('new latest message', onLatestMessage);
+        return () => {
+            socket.off('message received', onMessageReceived);
+            socket.off('new latest message', onLatestMessage);
+        };
     }, [currChat]);
 
     useEffect(() => {

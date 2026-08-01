@@ -9,7 +9,7 @@ router.route("/")
   .get(protect, getStatuses);
 
 router.route("/:statusId")
-  .get(getStatusById)
+  .get(protect, getStatusById)
   .delete(protect, deleteStatus);
 
 module.exports = router;

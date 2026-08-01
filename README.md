@@ -26,7 +26,8 @@ Welcome to the MERN Stack Chat App! This application allows users to securely co
   - **Message Forwarding:** Users have the ability to delete or forward messages to other chats.
   - **Reply to Messages:** Users can reply to particular messages within the chat and can traverse to the tagged message.
   - **Smart Reply:** Users can generate automatic replies to others' messages. This feature has been implemented using OpenAI api and replies to messages containing text content.
-  - **Emoji Picker:** Users can send emojis in by picking emojis from the `emoji-picker`. This feature has only been made available for desktop users `min-width:768px`. <em> (deprecated in production)</em>
+  - **Chat AI:** When OpenAI is configured, every user gets a private chat with a clearly labelled AI assistant. Replies use the recent encrypted chat history for context and are generated only by the backend.
+  - **Emoji Picker:** Desktop users can insert emojis from a picker anchored above the active message field.
   - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
   - **Delete Chats:** Users can also delete a specific chat.
   - **Chat Wallpaper:** Users can update the wallpaper of a particular chat or all at once.
@@ -82,15 +83,28 @@ To run the MERN Stack Chat App locally, follow these steps:
 
 1. Clone the repository: `git clone https://github.com/srbmaury/MERN-Chat-App.git`
 2. Navigate to the project directory: `cd MERN-Chat-App`
-3. Install the backend dependencies: `npm install`
-4. Install the frontend dependencies: `cd frontend` then `npm install`
+3. Install the backend dependencies: `npm install --legacy-peer-deps`
+4. Install the frontend dependencies: `cd frontend` then `npm install --legacy-peer-deps`
 5. Create a `.env` file in the root directory with the following environment variables:
 
 - For Connection to MongoDB and Login
 ```
-PORT=3000
+PORT=5000
 MONGO_URI=your-mongodb-connection-string
 JWT_SECRET=your-jwt-secret
+CLIENT_ORIGINS=http://localhost:3000
+API_BASE_URL=http://localhost:5000
+```
+
+- For the built-in AI assistant
+```
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-5.6
+AI_ASSISTANT_NAME=Chat AI
+AI_ASSISTANT_EMAIL=chat-ai@system.local
+AI_ASSISTANT_INSTRUCTIONS=
+AI_ASSISTANT_RATE_LIMIT_PER_MINUTE=10
+AI_ASSISTANT_ALLOW_PROGRAMMING=false
 ```
 
 - For Encrypting Messages
@@ -125,6 +139,7 @@ UNSPLASH_ACCESS_KEY=your-unsplash-access-key
 - For smart replies
 ```
 OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-5.6
 ```
 
 For Sending Data to Google Sheet 
@@ -134,7 +149,13 @@ PRIVATE_KEY=your-google-sheets-api-private-key
 GOOGLE_SHEET_ID=your-google-sheet-id
 ```
 
-6. Use `npm start` in the root(`MERN-Chat-App`) directory.
+6. Start the backend with `npm start` in the project root.
+7. In a second terminal, start the frontend with `cd frontend && npm start`.
+
+The frontend uses Vite and opens on `http://localhost:3000`. Optional frontend
+configuration can be supplied in `frontend/.env.local` using `VITE_API_URL`
+and `VITE_SOCKET_URL`. Configure `MODERATION_API_URL` on the backend when the
+offensive-content service is enabled.
 
 Make sure to replace the placeholder values (`your-mongodb-connection-string`, `your-jwt-secret`, etc.) with the actual values specific to your environment and setup.
 

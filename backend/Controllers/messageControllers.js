@@ -2,39 +2,37 @@ const asyncHandler = require("express-async-handler");
 const Chat = require("../models/chatModel");
 const Message = require('../models/messageModel');
 const User = require("../models/userModel");
-const crypto = require('crypto');
-const dotenv = require("dotenv");
-dotenv.config();
+const { encryptMessage, decryptMessage } = require("../utils/messageCrypto");
+const { replyAsAssistant } = require("../services/aiAssistantService");
 
-// Encryption key (you can generate a secure key using a key generation function)
-const encryptionKey = process.env.ENCRYPTION_KEY;
-
-function encryptMessage(message) {
-    const iv = crypto.randomBytes(16); // Generate a new IV for each encryption
-    const cipher = crypto.createCipheriv('aes-256-cbc', encryptionKey, iv);
-    let encrypted = cipher.update(message, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-
-    // Prepend the IV to the encrypted message
-    const encryptedMessage = iv.toString('hex') + encrypted;
-    return encryptedMessage;
-}
-
-function decryptMessage(encryptedMessage) {
-    const iv = Buffer.from(encryptedMessage.slice(0, 32), 'hex'); // Extract the IV
-    const encrypted = encryptedMessage.slice(32);
-
-    const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKey, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-}
+const moderateContent = async (content) => {
+    if (!content || !process.env.MODERATION_API_URL) return "Neither";
+    const response = await fetch(`${process.env.MODERATION_API_URL.replace(/\/$/, "")}/api/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: content }),
+        signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) throw new Error("Moderation service rejected the request");
+    const data = await response.json();
+    return ["Offensive", "Hateful", "Neither"].includes(data.prediction) ? data.prediction : "Neither";
+};
 
 const sendMessage = asyncHandler(async (req, res) => {
     const { content, media, chatId, messageId } = req.body;
     if ((!content && !media) || !chatId) {
         console.log("Invalid data passed into request");
         return res.sendStatus(400);
+    }
+    if (content && (typeof content !== "string" || content.length > 10_000)) {
+        return res.status(400).json({ error: "Message content is too long" });
+    }
+    if (media) {
+        try {
+            if (new URL(media).protocol !== "https:" || media.length > 2048) throw new Error();
+        } catch {
+            return res.status(400).json({ error: "Invalid media URL" });
+        }
     }
 
     let encryptedContent, encryptedMedia;
@@ -50,6 +48,24 @@ const sendMessage = asyncHandler(async (req, res) => {
     };
 
     try {
+        const chat = await Chat.findOne({ _id: chatId, users: req.user._id });
+        if (!chat) return res.status(403).json({ error: "You are not a member of this chat" });
+        if (messageId && !await Message.exists({ _id: messageId, chat: chatId })) {
+            return res.status(400).json({ error: "Reply message does not belong to this chat" });
+        }
+        let moderationCategory = "Neither";
+        try {
+            moderationCategory = await moderateContent(content);
+        } catch (error) {
+            console.error(`Moderation unavailable: ${error.message}`);
+        }
+        if (moderationCategory !== "Neither") {
+            const moderatedUser = await User.findById(req.user._id);
+            moderatedUser.fouls += 1;
+            if (moderatedUser.fouls >= 10) moderatedUser.blocked = true;
+            await moderatedUser.save();
+        }
+        res.setHeader("X-Moderation-Category", moderationCategory);
         var message = await Message.create(newMessage);
 
         let decryptedContent, decryptedMedia;
@@ -58,18 +74,17 @@ const sendMessage = asyncHandler(async (req, res) => {
         message.content = decryptedContent;
         message.media = decryptedMedia;
 
-        message = await message.populate("sender", "name pic email");
+        message = await message.populate("sender", "name pic email isBot");
         message = await message.populate("isReplyTo");
         message = await message.populate("isReplyTo.sender", "name pic");
         message = await message.populate("chat");
         message = await User.populate(message, {
             path: "chat.users",
-            select: "name pic email",
+            select: "name pic email isBot",
         });
 
         if (message.isReplyTo) {
-            let replyMsg = await Message.findById(message.isReplyTo);
-            replyMsg = replyMsg.toObject();
+            const replyMsg = message.isReplyTo.toObject();
             if (replyMsg.content) replyMsg.content = decryptMessage(replyMsg.content);
             if (replyMsg.media) replyMsg.media = decryptMessage(replyMsg.media);
             message.isReplyTo = replyMsg;
@@ -79,7 +94,22 @@ const sendMessage = asyncHandler(async (req, res) => {
             latestMessage: message,
         });
 
+        const io = req.app.get("io");
+        message.chat.users.forEach(user => {
+            if (String(user._id) !== String(req.user._id)) {
+                io.to(String(user._id)).emit("message received", message);
+            }
+        });
+
         res.status(201).json(message);
+
+        if (!chat.isGroupChat) {
+            setImmediate(() => replyAsAssistant({
+                chatId,
+                senderId: req.user._id,
+                io,
+            }).catch(error => console.error(`AI assistant reply failed: ${error.message}`)));
+        }
     } catch (error) {
         console.log(error);
         res.status(400).json({ error: "Message creation failed" });
@@ -88,7 +118,9 @@ const sendMessage = asyncHandler(async (req, res) => {
 
 const allMessages = asyncHandler(async (req, res) => {
     try {
-        let messages = await Message.find({ chat: req.params.chatId }).populate("sender", "name pic email").populate("chat").populate("isReplyTo");
+        const chat = await Chat.exists({ _id: req.params.chatId, users: req.user._id });
+        if (!chat) return res.status(403).json({ message: "You are not a member of this chat" });
+        let messages = await Message.find({ chat: req.params.chatId }).populate("sender", "name pic email isBot").populate("chat").populate("isReplyTo");
         // Decrypt the content of each message before sending the response
         const decryptedMessages = messages.map(message => {
 
@@ -117,7 +149,10 @@ const allMessages = asyncHandler(async (req, res) => {
 
 const deleteMessage = asyncHandler(async (req, res) => {
     try {
-        const message = await Message.findByIdAndDelete(req.params.messageId);
+        const message = await Message.findOneAndDelete({
+            _id: req.params.messageId,
+            sender: req.user._id,
+        });
         if (!message) {
             return res.status(404).json({ success: false });
         }
@@ -127,19 +162,22 @@ const deleteMessage = asyncHandler(async (req, res) => {
             newLatestMessageId = messages[0]._id;
         }
         // Update the chat's latestMessage property
+        const latestMessageUpdate = newLatestMessageId
+            ? { $set: { latestMessage: newLatestMessageId } }
+            : { $unset: { latestMessage: 1 } };
         const chat = await Chat.findOneAndUpdate(
             { _id: message.chat },
-            { latestMessage: newLatestMessageId },
+            latestMessageUpdate,
             { new: true }
         ).populate({
             path: 'users',
-            select: '-password'
+            select: 'name pic email'
         }).populate({
             path: 'latestMessage',
             select: 'sender content media createdAt',
             populate: {
                 path: 'sender',
-                select: '-password'
+                select: 'name pic email'
             }
         });
         if (messages.length > 0) {
@@ -150,6 +188,13 @@ const deleteMessage = asyncHandler(async (req, res) => {
             chat.latestMessage.content = decryptedContent;
             chat.latestMessage.media = decryptedMedia;
         }
+
+        const io = req.app.get("io");
+        chat.users.forEach(user => {
+            if (String(user._id) !== String(req.user._id)) {
+                io.to(String(user._id)).emit("new latest message", chat, message);
+            }
+        });
 
         res.json({ success: true, chat });
     } catch (err) {

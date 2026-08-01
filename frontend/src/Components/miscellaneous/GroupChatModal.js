@@ -19,10 +19,9 @@ import {
   import { ChatState } from '../../Context/ChatProvider';
   import UserBadgeItem from '../UserAvatar/UserBadgeItem';
   import UserListItem from '../UserAvatar/UserListItem';
+
+  import { getSocket } from '../../config/socket';
   
-  import io from 'socket.io-client';
-  
-  const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
   var socket;
   
   const GroupChatModal = ({ children }) => {
@@ -38,7 +37,7 @@ import {
     const { user, chats, setChats, setSelectedChat } = ChatState();
   
     useEffect(() => {
-      socket = io(ENDPOINT);
+      socket = getSocket(user.token);
       socket.emit("setup", user);
     }, [user]);
   
@@ -116,7 +115,6 @@ import {
         );
         setChats([data, ...chats]);
         setSelectedChat(data);
-        socket.emit('new group', data);
         toast({
           title: 'New Group Chat Created!',
           status: 'success',
@@ -142,10 +140,10 @@ import {
     }, [search, handleSearch]);
   
     useEffect(() => {
-      socket.on('group formed', (newGroupFormed) => {
-        setChats([newGroupFormed, ...chats]);
-      });
-    });
+      const onGroupFormed = (newGroupFormed) => setChats(current => [newGroupFormed, ...current]);
+      socket?.on('group formed', onGroupFormed);
+      return () => socket?.off('group formed', onGroupFormed);
+    }, [setChats]);
   
     return (
       <>
@@ -213,6 +211,5 @@ import {
       </>
     );
   };
-  
+
   export default GroupChatModal;
-  

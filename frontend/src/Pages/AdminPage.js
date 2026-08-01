@@ -59,7 +59,7 @@ const AdminPage = () => {
         };
 
         fetchUserMessages();
-    }, []);
+    }, [toast, user.token]);
     const handleCheckboxChange = (userId, message, category) => {
         const existingIndex = tmpArray.findIndex(
             item => item.userId === userId && item.message === message

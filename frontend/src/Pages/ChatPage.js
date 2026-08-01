@@ -12,7 +12,7 @@ const ChatPage = () => {
     const [fetchAgain, setFetchAgain] = useState(false);
 
     useEffect(() => {
-        setFetchAgain(!fetchAgain);
+        setFetchAgain(current => !current);
     }, [user]);
 
     const history = useHistory();

@@ -1,22 +1,21 @@
 import React, { useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { ChatState } from '../../Context/ChatProvider';
-import { io } from 'socket.io-client';
+import { getSocket } from '../../config/socket';
 import { Box } from '@chakra-ui/react';
 
-const ENDPOINT = "https://mern-chat-app-xlr3.onrender.com";
 var socket;
 
 const GameInvitation = () => {
     const { user, selectedChat, gameStatus, setGameStatus, gameRequestTime, setPlayArenaVisibility } = ChatState();
 
     useEffect(() => {
-        socket = io(ENDPOINT);
+        socket = getSocket(user.token);
         socket.emit("setup", user);
     }, [user]);
 
     useEffect(() => {
-        socket.on('no response close game', () => {
+        const onNoResponse = () => {
             const outerElement = document.getElementById('outer');
             const innerElement = document.getElementById('inner');
             if (outerElement && innerElement) {
@@ -26,11 +25,13 @@ const GameInvitation = () => {
                     setGameStatus(false);
                 }, 3000);
             }
-        });
+        };
+        socket?.on('no response close game', onNoResponse);
+        return () => socket?.off('no response close game', onNoResponse);
     }, [setGameStatus]);
 
     useEffect(() => {
-        socket.on('accepted play request', (name) => {
+        const onAccepted = (name) => {
             const outerElement = document.getElementById('outer');
             const innerElement = document.getElementById('inner');
             if (outerElement && innerElement) {
@@ -42,11 +43,13 @@ const GameInvitation = () => {
                 }, 0);
             }
             setPlayArenaVisibility(true);
-        });
-    }, [setGameStatus]);
+        };
+        socket?.on('accepted play request', onAccepted);
+        return () => socket?.off('accepted play request', onAccepted);
+    }, [setGameStatus, setPlayArenaVisibility]);
 
     useEffect(() => {
-        socket.on('rejected play request', (name) => {
+        const onRejected = (name) => {
             const outerElement = document.getElementById('outer');
             const innerElement = document.getElementById('inner');
             if (outerElement && innerElement) {
@@ -57,15 +60,19 @@ const GameInvitation = () => {
                     setGameStatus(false);
                 }, 3000);
             }
-        });
+        };
+        socket?.on('rejected play request', onRejected);
+        return () => socket?.off('rejected play request', onRejected);
     }, [setGameStatus]);
 
     useEffect(() => {
         const interval = setInterval(() => {
             const newTime = new Date();
             if ((newTime - gameRequestTime) / 1000 > 5) {
-                document.getElementById('outer').style.backgroundColor = "red";
-                document.getElementById('inner').innerHTML = "Player is offline";
+                const outerElement = document.getElementById('outer');
+                const innerElement = document.getElementById('inner');
+                if (outerElement) outerElement.style.backgroundColor = "red";
+                if (innerElement) innerElement.innerText = "Player is offline";
                 if((newTime - gameRequestTime) / 1000 > 8){
                     clearInterval(interval);
                     setGameStatus(false);
@@ -76,11 +83,11 @@ const GameInvitation = () => {
         return () => {
             clearInterval(interval);
         };
-    }, [gameRequestTime]);
+    }, [gameRequestTime, setGameStatus]);
 
     return (
-        <Draggable style={{ zIndex: 200 }}>
-            <Box>
+        <Draggable>
+            <Box position="relative" zIndex={200}>
                 {gameStatus && (
                     <Box
                         id="outer"

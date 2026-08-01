@@ -31,6 +31,7 @@ import { getSender } from '../../config/ChatLogics';
 import { Effect } from 'react-notification-badge';
 import NotificationBadge from 'react-notification-badge/lib/components/NotificationBadge';
 import Statuses from './Statuses';
+import { disconnectSocket } from '../../config/socket';
 
 function SideDrawer() {
     const [search, setSearch] = useState('');
@@ -38,12 +39,15 @@ function SideDrawer() {
     const [loading, setLoading] = useState(false);
     const [loadingChat, setLoadingChat] = useState(false);
 
-    const { user, setSelectedChat, chats, setChats, notification, setNotification } = ChatState();
+    const { user, setUser, setSelectedChat, chats, setChats, notification, setNotification } = ChatState();
     const history = useHistory();
     const { isOpen, onOpen, onClose } = useDisclosure();
 
-    const logoutHandler = () => {
+    const logoutHandler = async () => {
+        await axios.post('/api/user/logout').catch(() => {});
         localStorage.removeItem('userInfo');
+        disconnectSocket();
+        setUser(undefined);
         history.push('/');
     };
 

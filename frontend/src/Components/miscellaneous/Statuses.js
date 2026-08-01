@@ -44,14 +44,14 @@ const Statuses = (props) => {
 
             // Filter statuses within the last 24 hours
             const filteredStatuses = data.filter((status) => {
-                const statusTimestamp = new Date(status.timestamp);
+                const statusTimestamp = new Date(status.createdAt);
                 const twentyFourHoursAgo = new Date();
                 twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
                 return statusTimestamp >= twentyFourHoursAgo;
             });
 
             setStatuses(filteredStatuses);
-            const status = statuses.find((status) => status.user._id === user._id);
+            const status = filteredStatuses.find((status) => status.user._id === user._id);
             if (status) {
                 setText(status.text);
                 setMedia(status.media);
@@ -66,7 +66,7 @@ const Statuses = (props) => {
                 position: 'bottom-left',
             });
         }
-    }, [statuses]);
+    }, [toast, user._id, user.token]);
 
     const addStatus = async () => {
         if(!text || !media){
@@ -164,7 +164,7 @@ const Statuses = (props) => {
     useEffect(() => {
         if(props.isModalOpen)
             fetchStatuses();
-    }, [props.isModalOpen]);
+    }, [props.isModalOpen, fetchStatuses]);
 
     const [todisplayName, setTodisplayName] = useState('');
     const [todisplayPic, setTodisplayPic] = useState('');

@@ -1,5 +1,5 @@
 import { useHistory } from "react-router-dom";
-const { createContext, useContext, useEffect, useState } = require("react");
+import { createContext, useContext, useEffect, useState } from "react";
 
 const ChatContext = createContext();
 

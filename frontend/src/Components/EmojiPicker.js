@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import 'emoji-picker-element';
 
 const EmojiPicker = (props) => {
+    const pickerRef = useRef(null);
+
     useEffect(() => {
         const handleEmojiClick = (event) => {
             const input = props.inputRef.current;
@@ -22,17 +24,26 @@ const EmojiPicker = (props) => {
             }
         };
 
-        const emojiPicker = document.querySelector('emoji-picker');
+        const emojiPicker = pickerRef.current;
         if (!emojiPicker) return;
         emojiPicker.addEventListener('emoji-click', handleEmojiClick);
 
         return () => {
             emojiPicker.removeEventListener('emoji-click', handleEmojiClick);
         };
-    }, []);
+    }, [props.inputRef, props.newMessage, props.setEmojiDisplay, props.setNewMessage]);
 
     return (
-        <emoji-picker style={{ 'position': 'fixed', paddingBottom:"40px", zIndex:"200" }}></emoji-picker>
+        <emoji-picker
+            ref={pickerRef}
+            style={{
+                position: 'absolute',
+                bottom: '52px',
+                left: 0,
+                maxWidth: 'min(352px, calc(100vw - 32px))',
+                zIndex: 200,
+            }}
+        />
     );
 };
 

@@ -9,16 +9,16 @@ const statusSchema = new mongoose.Schema({
   text: {
     type: String,
     required: true,
+    maxlength: 500,
   },
   media: {
     type: String,
     required: true,
+    maxlength: 2048,
   },
-  timestamp: {
-    type: Date,
-    default: Date.now,
-  },
-});
+}, { timestamps: true });
+
+statusSchema.index({ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 });
 
 const Status = mongoose.model('Status', statusSchema);
 

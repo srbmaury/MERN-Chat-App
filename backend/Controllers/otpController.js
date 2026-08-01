@@ -1,13 +1,10 @@
 const asyncHandler = require('express-async-handler');
 const OTPModel = require('../models/otpModel');
-const dotenv = require("dotenv");
 const User = require('../models/userModel');
 const nodemailer = require("nodemailer");
 const path = require('path');
 const fs = require("fs").promises;
-const cron = require('node-cron');
-
-dotenv.config();
+const crypto = require("crypto");
 
 const myEmailId = process.env.EMAIL_ID;
 const emailPW = process.env.PASSWORD;
@@ -22,8 +19,7 @@ const sendOTP = async (email, otp) => {
     });
 
     try {
-        const __dirname1 = path.resolve();
-        const emailTemplate = await fs.readFile(path.join(__dirname1, 'backend', 'templates', 'send-password-reset-email.html'), 'utf8');
+        const emailTemplate = await fs.readFile(path.join(__dirname, '..', 'templates', 'send-password-reset-email.html'), 'utf8');
         const html = emailTemplate.replace('{{otp}}', otp);
 
         const mailOptions = {
@@ -42,31 +38,38 @@ const sendOTP = async (email, otp) => {
 
 const generateOTP = asyncHandler(async (req, res) => {
     try {
-        const { email } = req.body;
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const email = req.body.email?.trim().toLowerCase();
+        if (!email) return res.status(400).json({ message: "Email is required" });
+
+        const otp = crypto.randomInt(100000, 1000000).toString();
+        const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
 
         const user = await User.findOne({ email });
         if (!user) {
-            throw Error(`User with ${email} not found`);
+            return res.status(200).json({ message: 'If the account exists, a password reset code was sent.' });
         }
-        const otpEntry = new OTPModel({ email, otp });
+        await OTPModel.deleteMany({ email });
+        const otpEntry = new OTPModel({ email, otpHash });
         await otpEntry.save();
 
         await sendOTP(email, otp);
 
-        res.status(200).json({ message: 'OTP generated successfully' });
+        res.status(200).json({ message: 'If the account exists, a password reset code was sent.' });
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: error.message });
     }
 });
 
-const bcrypt = require('bcryptjs');
-
 const verifyOTP = asyncHandler(async (req, res) => {
     try {
-        const { email, otp, newPassword } = req.body;
-        const otpEntry = await OTPModel.findOne({ email, otp });
+        const email = req.body.email?.trim().toLowerCase();
+        const { otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword || newPassword.length < 8) {
+            return res.status(400).json({ message: 'Valid email, code, and an 8-character password are required' });
+        }
+        const otpHash = crypto.createHash("sha256").update(String(otp)).digest("hex");
+        const otpEntry = await OTPModel.findOne({ email, otpHash });
 
         if (!otpEntry) {
             return res.status(400).json({ message: 'Invalid OTP' });
@@ -76,42 +79,24 @@ const verifyOTP = asyncHandler(async (req, res) => {
         const otpCreationTime = otpEntry.createdAt;
         const timeDifferenceSeconds = (currentTime - otpCreationTime) / 1000;
 
-        if (timeDifferenceSeconds > process.env.OTP_EXPIRATION_TIME_SECONDS) {
-            await otpEntry.remove();
+        const expirationSeconds = Number(process.env.OTP_EXPIRATION_TIME_SECONDS) || 600;
+        if (timeDifferenceSeconds > expirationSeconds) {
+            await otpEntry.deleteOne();
             return res.status(400).json({ message: 'OTP has expired' });
         }
 
         const user = await User.findOne({ email });
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        if (!user) return res.status(400).json({ message: 'Invalid OTP' });
 
-        user.password = hashedPassword;
+        user.password = newPassword;
         await user.save();
 
-        await otpEntry.remove();
+        await otpEntry.deleteOne();
 
         res.status(200).json({ message: 'Password changed successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Failed to change password' });
-    }
-});
-
-cron.schedule('* * * * *', async () => {
-    try {
-        const currentTime = new Date();
-        const otpExpirationTime = new Date(currentTime.getTime() - process.env.OTP_EXPIRATION_TIME_SECONDS * 1000);
-
-        // Find all OTPs that have expired
-        const expiredOTPs = await OTPModel.find({ createdAt: { $lt: otpExpirationTime } });
-
-        // Delete expired OTPs
-        if (expiredOTPs.length > 0) {
-            await OTPModel.deleteMany({ _id: { $in: expiredOTPs.map((otp) => otp._id) } });
-            console.log(`${expiredOTPs.length} expired OTP(s) deleted.`);
-        }
-    } catch (error) {
-        console.error('Error while deleting expired OTPs:', error.message);
     }
 });
 
