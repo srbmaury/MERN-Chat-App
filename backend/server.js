@@ -132,7 +132,8 @@ app.post('/api/upload', protect, rateLimit({ windowMs: 60 * 60 * 1000, max: 30 }
 // as /chats refreshable even when the hosting platform does not set NODE_ENV.
 const frontendDist = path.resolve(__dirname, "../frontend/dist");
 app.use(express.static(frontendDist));
-app.get('/{*splat}', (req, res, next) => {
+app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api/")) return next();
     res.sendFile(path.join(frontendDist, "index.html"), error => {
         if (error) next();
     });
