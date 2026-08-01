@@ -1,13 +1,10 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const generateToken = require("../config/generateToken");
-const nodemailer = require("nodemailer");
 const path = require('path');
 const fs = require('fs').promises;
 const crypto = require("crypto");
-
-const myEmailId = process.env.EMAIL_ID;
-const emailPW = process.env.PASSWORD;
+const { sendEmailInBackground } = require("../services/emailService");
 
 const generateVerificationToken = () => {
     return crypto.randomBytes(32).toString("hex");
@@ -19,35 +16,18 @@ const secureCookies = process.env.COOKIE_SECURE
     ? process.env.COOKIE_SECURE === "true"
     : (process.env.API_BASE_URL || "").startsWith("https://");
 
-const sendVerificationEmail = async (email, verificationToken) => {
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: myEmailId,
-            pass: emailPW,
-        },
+const queueVerificationEmail = async (email, verificationToken) => {
+    const templatePath = path.join(__dirname, '..', 'templates', 'send-verification-email-success.html');
+    const emailTemplate = await fs.readFile(templatePath, 'utf8');
+    const apiBaseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    const verificationUrl = `${apiBaseUrl}/api/user/verify/${verificationToken}`;
+    const html = emailTemplate.replace('{{verificationUrl}}', verificationUrl);
+    sendEmailInBackground({
+        to: email,
+        subject: 'Verify your Talk-A-Tive email',
+        html,
+        text: `Verify your email by visiting: ${verificationUrl}`,
     });
-
-    try {
-        const templatePath = path.join(__dirname, '..', 'templates', 'send-verification-email-success.html');
-        const emailTemplate = await fs.readFile(templatePath, 'utf8');
-        const apiBaseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-        const verificationUrl = `${apiBaseUrl}/api/user/verify/${verificationToken}`;
-        const html = emailTemplate.replace('{{verificationUrl}}', verificationUrl);
-
-        const mailOptions = {
-            from: myEmailId,
-            to: email,
-            subject: 'Email Verification',
-            html
-        };
-
-        await transporter.sendMail(mailOptions);
-        return true;
-    } catch (error) {
-        console.error(error);
-        return false;
-    }
 };
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -76,27 +56,37 @@ const registerUser = asyncHandler(async (req, res) => {
     const verificationToken = generateVerificationToken();
     const verificationTokenHash = hashToken(verificationToken);
 
-    const isEmailSent = await sendVerificationEmail(normalizedEmail, verificationToken);
+    const user = await User.create({
+        name: name.trim(),
+        email: normalizedEmail,
+        password,
+        verificationToken: verificationTokenHash,
+        verificationTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
 
-    if (isEmailSent) {
-        const user = await User.create({
-            name: name.trim(),
-            email: normalizedEmail,
-            password,
-            verificationToken: verificationTokenHash,
-            verificationTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        });
-
-        if (user) {
-            res.status(201).json({ message: "Registration successful. Please verify your email." });
-        } else {
-            res.status(400);
-            throw new Error("Failed to create the user");
-        }
+    if (user) {
+        await queueVerificationEmail(normalizedEmail, verificationToken);
+        res.status(201).json({ message: "Registration successful. Please verify your email." });
     } else {
-        res.status(500);
-        throw new Error("Failed to send verification email");
+        res.status(400);
+        throw new Error("Failed to create the user");
     }
+});
+
+const resendVerificationEmail = asyncHandler(async (req, res) => {
+    const email = req.body.email?.trim().toLowerCase();
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await User.findOne({ email, isEmailVerified: false, isBot: { $ne: true } });
+    if (user) {
+        const token = generateVerificationToken();
+        user.verificationToken = hashToken(token);
+        user.verificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await user.save();
+        await queueVerificationEmail(email, token);
+    }
+
+    res.json({ message: "If an unverified account exists, a verification email has been sent." });
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
@@ -333,4 +323,5 @@ module.exports = {
     fetchSubmitForReview,
     review,
     logoutUser,
+    resendVerificationEmail,
 };

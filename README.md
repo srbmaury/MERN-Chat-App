@@ -1,162 +1,192 @@
 # MERN Stack Chat App
 
-Welcome to the MERN Stack Chat App! This application allows users to securely communicate with others through one-to-one or group chats. With features like email verification, password encryption, message forwarding, and more, the MERN Stack Chat App ensures a safe and seamless chatting experience.
+Talk-A-Tive is a MERN chat application with one-to-one and group messaging,
+real-time Socket.IO updates, media/status uploads, an optional OpenAI assistant,
+and a two-player Tic-Tac-Toe game.
 
-## One-to-one Chat
-![One-to-one Chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690005398/uploads/11fdf0aed2dea50d256e02077187532e_sq3ixw.png)
+Live app: [mern-chat-app-xlr3.onrender.com](https://mern-chat-app-xlr3.onrender.com)
 
-## Group Chat
-![Group Chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690032073/uploads/982336d62a5fbe9ec080f49f38c5e760_hyzxmw.png)
+## Screenshots
 
-## Tic-Tac-Toe Game
-![Tic-Tac-Toe Game](https://res.cloudinary.com/dnimsxcmh/image/upload/v1696135600/uploads/47b45fd10b27f21e023626c64251603e_jfkdmb.png)
+### One-to-one chat
+
+![One-to-one chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690005398/uploads/11fdf0aed2dea50d256e02077187532e_sq3ixw.png)
+
+### Group chat
+
+![Group chat](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690032073/uploads/982336d62a5fbe9ec080f49f38c5e760_hyzxmw.png)
+
+### Tic-Tac-Toe
+
+![Tic-Tac-Toe](https://res.cloudinary.com/dnimsxcmh/image/upload/v1696135600/uploads/47b45fd10b27f21e023626c64251603e_jfkdmb.png)
+
 ## Features
 
-- **Security:**
-  - **Email Verification:** User email addresses are verified during the registration process to ensure secure access to the app.
-  - **Password Encryption:** User passwords are encrypted using bcryptjs to protect user data.
-  - **Message Encryption:** Messages are encrypted using the `crypto` library for enhanced security.
-  - **Sending Photos:** Users can also send photos, that too in encrypted form.
+### Accounts and security
 
-- **Chat Features:**
-  - **One-to-One and Group Chats:** Users can create both one-to-one and group chats to communicate with others.
-  - **Group Admin Privileges:** In group chats, designated group admins have full control to add or remove members from the group.
-  - **Group Name Customization:** While group admins have additional powers, all members can actively participate in the group by having the ability to change the group name. 
-  - **Typing Indicator:** Users can see real-time typing indicators in chats, showing when others are composing messages.
-  - **Message Forwarding:** Users have the ability to delete or forward messages to other chats.
-  - **Reply to Messages:** Users can reply to particular messages within the chat and can traverse to the tagged message.
-  - **Smart Reply:** Users can generate automatic replies to others' messages. This feature has been implemented using OpenAI api and replies to messages containing text content.
-  - **Chat AI:** When OpenAI is configured, every user gets a private chat with a clearly labelled AI assistant. Replies use the recent encrypted chat history for context and are generated only by the backend.
-  - **Emoji Picker:** Desktop users can insert emojis from a picker anchored above the active message field.
-  - **Mute Chats:** Users can mute specific chats to stop receiving notifications temporarily.
-  - **Delete Chats:** Users can also delete a specific chat.
-  - **Chat Wallpaper:** Users can update the wallpaper of a particular chat or all at once.
-  - **Offensive Content Detection** Offensive Content is being detected in the messages being sent and if for a user 10 messages have been found offensive the user will be blocked and won't be able to further access the site.
-  Refer to [Offensive Content Detection](#offensive-content-detection) for more info.
+- Email verification is required before login.
+- Password-reset codes are emailed and stored as hashes with a 10-minute TTL.
+- Passwords are hashed with `bcryptjs`.
+- Authentication uses a signed JWT in an HTTP-only cookie.
+- Text and media URLs are encrypted at rest with AES-256-GCM. Legacy AES-CBC
+  messages remain readable.
+- Authenticated endpoints validate chat membership and ownership/admin rights.
+- Login, registration, messages, uploads, smart replies, and other sensitive
+  routes have request limits.
 
-- **User Profile:**
-  - **User Search:** Users can search for other users to initiate conversations with them.
-  - **Status Updates:** Users can update their status with a photo and caption which expires after 24 hours.
-  - **Profile Picture:** Users can update their profile picture to personalize their account.
+### Messaging
 
-- **Notifications and Account Management:**
-  - **Notifications:** Users receive notifications for new messages, ensuring they never miss important conversations.
-  - **Reset Password:** Users can reset their account password if they forget.
+- One-to-one and group chats with Socket.IO delivery and typing indicators.
+- Reply, forward, delete, mute/unmute, unread notifications, and latest-message
+  previews.
+- Image uploads through the authenticated backend and Cloudinary.
+- Per-chat or all-chat wallpapers, including Unsplash search when configured.
+- Desktop emoji picker anchored above the active message field.
+- Browser-local timestamps rather than a fixed GMT display.
 
-- **Gamification**
-  - **Tic-Tac-Toe:** Users can play tic-tac-toe game with each other. A game will be initiated by sending ```\play``` on any personal chat. The Opponent may choose to refuse to play.
-- Chron Job is being used to remove expired statuses and otps.   
-## Technologies Used
+Group creators are admins. Only the group admin can rename or delete the group
+and add or remove members. All members can send messages.
 
-The MERN Stack Chat App is built using the following technologies:
+### Profiles and statuses
 
-- **MongoDB:** A popular NoSQL database for storing user information and chat messages.
-- **Express.js:** A flexible web application framework for building the server side of the app.
-- **React.js:** A powerful JavaScript library for building the user interface.
-- **Node.js:** A server-side JavaScript runtime environment used for running the server and handling requests.
-- **Socket.IO:** A real-time bidirectional event-based communication library for instant messaging functionality.
-- **Chakra UI:** A simple and accessible component library for building user interfaces.
-- **bcryptjs:** A library for encrypting user passwords securely.
-- **dotenv:** A module for loading environment variables from a `.env` file.
-- **express-async-handler:** A utility to handle asynchronous errors in Express.js.
-- **fs:** A built-in Node.js module for working with the file system.
-- **googleapis:** A library for interacting with various Google APIs.
-- **http-proxy-middleware:** A middleware for proxying requests in Express.js.
-- **jsonwebtoken:** A library for creating and verifying JSON Web Tokens (JWT).
-- **mongoose:** An Object Data Modeling (ODM) library for MongoDB and Node.js.
-- **nodemailer:** A module for sending emails using Node.js.
-- **react-overflow:** A React component for handling overflow content.
-- **Cloudinary:** A cloud-based media-management platform.
-- **node-cron** A cron-like task scheduler for nodeJS.
-- **emoji-picker** A user interface component offering a variety of emojis.
+- Search users by name or email and start a direct chat.
+- Update the profile-picture URL.
+- Publish an image status with a caption and delete your own status.
+- MongoDB automatically expires statuses after 24 hours through a TTL index.
 
+### AI features
 
-## Offensive or Hateful Content Detection
-[Flask API](https://github.com/srbmaury/Flask_API) has been used for this purpose.
-If a user believes that a message has been incorrectly flagged as Offensive or Hateful, they have the option to request a review by clicking the Submit for Review button in the Modal. Until unless the user ticks submit for review, the message won't be recorded. The message submitted for review may also be added to the training dataset for further training the model using Google Sheets API.
+When `OPENAI_API_KEY` is configured:
 
-![Offensive or Hateful Content Detection](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690957402/uploads/14e4073b8bcd78583decbee941faa3dd_ggbbag.png)
+- Each user receives a private chat with the system-managed **Chat AI** user.
+- Chat AI uses recent encrypted chat history as context.
+- Smart Reply generates one concise reply for a selected text message.
+- AI and smart-reply endpoints are rate limited.
+- Programming assistance can be enabled or disabled with
+  `AI_ASSISTANT_ALLOW_PROGRAMMING`.
 
-## Installation
+### Moderation and review
 
-To run the MERN Stack Chat App locally, follow these steps:
+If `MODERATION_API_URL` is configured, sent text is checked by the external
+[Offensive Content Detection API](https://github.com/srbmaury/Flask_API).
+Flagged messages increment the sender's foul count; an account is blocked at
+10 fouls. Users can submit a disputed message for review, and admin-only routes
+can process reviews. Google Sheets export is available when its credentials are
+configured.
 
-1. Clone the repository: `git clone https://github.com/srbmaury/MERN-Chat-App.git`
-2. Navigate to the project directory: `cd MERN-Chat-App`
-3. Install the backend dependencies: `npm install --legacy-peer-deps`
-4. Install the frontend dependencies: `cd frontend` then `npm install --legacy-peer-deps`
-5. Create a `.env` file in the root directory with the following environment variables:
+![Moderation review](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690957402/uploads/14e4073b8bcd78583decbee941faa3dd_ggbbag.png)
 
-- For Connection to MongoDB and Login
-```
-PORT=5000
-MONGO_URI=your-mongodb-connection-string
-JWT_SECRET=your-jwt-secret
-CLIENT_ORIGINS=http://localhost:3000
-API_BASE_URL=http://localhost:5000
-```
+### Tic-Tac-Toe
 
-- For the built-in AI assistant
-```
-OPENAI_API_KEY=your-openai-api-key
-OPENAI_MODEL=gpt-5.6
-AI_ASSISTANT_NAME=Chat AI
-AI_ASSISTANT_EMAIL=chat-ai@system.local
-AI_ASSISTANT_INSTRUCTIONS=
-AI_ASSISTANT_RATE_LIMIT_PER_MINUTE=10
-AI_ASSISTANT_ALLOW_PROGRAMMING=false
+In a one-to-one chat, send `/play`. The other user can accept or reject the
+invitation. Moves and turns are synchronized through Socket.IO.
+
+## Technology
+
+- MongoDB and Mongoose
+- Express 5 and Node.js 22
+- React 18, Vite, Chakra UI, and Emotion
+- Socket.IO
+- bcryptjs and JSON Web Tokens
+- Nodemailer
+- Cloudinary
+- OpenAI Responses API
+- Google APIs and Unsplash (optional)
+- `emoji-picker-element`
+
+## Local installation
+
+Requirements:
+
+- Node.js 22 (the repository pins `22.22.0` in `.node-version`)
+- MongoDB, locally or hosted
+- A Brevo API key and verified sender for production email. Gmail app
+  credentials remain available as a local fallback.
+
+```bash
+git clone https://github.com/srbmaury/MERN-Chat-App.git
+cd MERN-Chat-App
+npm install --legacy-peer-deps
+npm install --legacy-peer-deps --prefix frontend
+cp .env.example .env
 ```
 
-- For Encrypting Messages
-```
-ENCRYPTION_KEY=your-encryption-key
+At minimum, replace these values in `.env`:
+
+```dotenv
+MONGO_URI=mongodb://127.0.0.1:27017/mern-chat
+JWT_SECRET=replace-with-a-long-random-secret
+ENCRYPTION_KEY=replace-with-a-long-random-secret
+BREVO_API_KEY=xkeysib-your-api-key
+FROM_EMAIL=your-verified-sender@example.com
+FROM_NAME=Talk-A-Tive
 ```
 
-- For Sending Email
-```
-EMAIL_ID=your-email-id
-PASSWORD = App-specific Password in Gmail
+Use `.env.example` as the complete configuration reference. Important optional
+groups are:
+
+- `OPENAI_*` and `AI_ASSISTANT_*` for Chat AI and Smart Reply
+- `CLOUD_NAME`, `API_KEY`, `API_SECRET`, and `UPLOAD_PRESET` for images
+- `UNSPLASH_ACCESS_KEY` for wallpaper search
+- `MODERATION_API_URL` for content moderation
+- `CLIENT_EMAIL`, `PRIVATE_KEY`, and `GOOGLE_SHEET_ID` for Google Sheets
+- `EMAIL_ID` and `PASSWORD` only when using the Gmail SMTP fallback locally
+
+Start the backend and frontend in separate terminals:
+
+```bash
+# project root
+npm start
+
+# second terminal, project root
+npm start --prefix frontend
 ```
 
-- For Working with Photos
-```
-CLOUD_NAME=your-cloudinary-cloud-name
-API_KEY=your-cloudinary-api-key
-API_SECRET=your-cloudinary-api-secret
-UPLOAD_PRESET=cloudinary-upload-preset
+The frontend runs on `http://localhost:3000` and proxies `/api` and Socket.IO
+traffic to the backend on `http://localhost:5000`.
+
+## Tests and production build
+
+```bash
+npm test
+npm run build
 ```
 
-- For Otp During Password Reset
-```
-OTP_EXPIRATION_TIME_SECONDS = 600
+The root build command installs frontend dependencies with `npm ci` and writes
+the production bundle to `frontend/dist`. The Express server serves that bundle
+and returns `index.html` for client-side routes such as `/chats`.
+
+## Deployment configuration
+
+For a same-origin deployment such as Render, set:
+
+```dotenv
+NODE_ENV=production
+API_BASE_URL=https://your-service.example.com
+CLIENT_APP_URL=https://your-service.example.com
+CLIENT_ORIGINS=https://your-service.example.com
+COOKIE_SECURE=true
+COOKIE_SAME_SITE=lax
 ```
 
-- For Searching Photos for Wallpaper
-```
-UNSPLASH_ACCESS_KEY=your-unsplash-access-key
-```
+Use `npm run build` as the build command and `npm start` as the start command.
+The server also recognizes same-origin requests by their request host, so
+authenticated POST requests work on the deployed domain. `.node-version` keeps
+Render on Node 22 instead of an incompatible newer major version.
 
-- For smart replies
-```
-OPENAI_API_KEY=your-openai-api-key
-OPENAI_MODEL=gpt-5.6
-```
+For a separately hosted frontend, set `VITE_API_URL` and `VITE_SOCKET_URL` in
+`frontend/.env.local` at build time and include the frontend origin in
+`CLIENT_ORIGINS`.
 
-For Sending Data to Google Sheet 
-```
-CLIENT_EMAIL=your-google-sheets-api-client-email
-PRIVATE_KEY=your-google-sheets-api-private-key
-GOOGLE_SHEET_ID=your-google-sheet-id
-```
+## Environment-variable notes
 
-6. Start the backend with `npm start` in the project root.
-7. In a second terminal, start the frontend with `cd frontend && npm start`.
-
-The frontend uses Vite and opens on `http://localhost:3000`. Optional frontend
-configuration can be supplied in `frontend/.env.local` using `VITE_API_URL`
-and `VITE_SOCKET_URL`. Configure `MODERATION_API_URL` on the backend when the
-offensive-content service is enabled.
-
-Make sure to replace the placeholder values (`your-mongodb-connection-string`, `your-jwt-secret`, etc.) with the actual values specific to your environment and setup.
+- Do not commit `.env`; only `.env.example` belongs in source control.
+- Changing `ENCRYPTION_KEY` makes existing encrypted messages unreadable.
+- For multiline Google private keys, store newlines as `\n`; the backend
+  converts them at runtime.
+- `COOKIE_SECURE=true` requires HTTPS.
+- Production email uses Brevo's HTTPS API so it does not depend on outbound
+  SMTP support. Signup queues verification email delivery instead of blocking
+  the HTTP response. Configure `BREVO_API_KEY`, `FROM_EMAIL`, and `FROM_NAME`.
 
 Made with ❤️ by [srbmaury](https://github.com/srbmaury)

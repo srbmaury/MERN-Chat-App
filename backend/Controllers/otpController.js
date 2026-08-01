@@ -1,35 +1,22 @@
 const asyncHandler = require('express-async-handler');
 const OTPModel = require('../models/otpModel');
 const User = require('../models/userModel');
-const nodemailer = require("nodemailer");
 const path = require('path');
 const fs = require("fs").promises;
 const crypto = require("crypto");
-
-const myEmailId = process.env.EMAIL_ID;
-const emailPW = process.env.PASSWORD;
+const { sendEmail } = require("../services/emailService");
 
 const sendOTP = async (email, otp) => {
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: myEmailId,
-            pass: emailPW,
-        },
-    });
-
     try {
         const emailTemplate = await fs.readFile(path.join(__dirname, '..', 'templates', 'send-password-reset-email.html'), 'utf8');
         const html = emailTemplate.replace('{{otp}}', otp);
 
-        const mailOptions = {
-            from: myEmailId,
+        await sendEmail({
             to: email,
             subject: 'Password Reset',
             html,
-        };
-
-        await transporter.sendMail(mailOptions);
+            text: `Your Talk-A-Tive password reset code is ${otp}. It expires in 10 minutes.`,
+        });
     } catch (error) {
         console.error(error);
         throw new Error('Failed to send password reset email');

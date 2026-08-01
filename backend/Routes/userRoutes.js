@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerUser, verifyEmail, authUser, logoutUser, allUsers, updateProfilePicture, submitForReview, fetchSubmitForReview, review } = require('../Controllers/userControllers');
+const { registerUser, verifyEmail, authUser, logoutUser, allUsers, updateProfilePicture, submitForReview, fetchSubmitForReview, review, resendVerificationEmail } = require('../Controllers/userControllers');
 const { protect } = require("../middleware/authMiddleware");
 const { rateLimit } = require("../middleware/rateLimiter");
 
@@ -13,5 +13,6 @@ router.route("/submitForReview").post(protect, rateLimit({ windowMs: 60 * 60 * 1
 router.route("/submittedForReview").get(protect, fetchSubmitForReview);
 router.route("/review").post(protect, review);
 router.get("/verify/:token", verifyEmail);
+router.post("/resend-verification", rateLimit({ windowMs: 60 * 60 * 1000, max: 5 }), resendVerificationEmail);
 
 module.exports = router;
