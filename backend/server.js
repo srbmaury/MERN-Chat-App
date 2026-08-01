@@ -58,19 +58,31 @@ const allowedOrigins = (process.env.CLIENT_ORIGINS || "http://localhost:3000,htt
     .map(origin => origin.trim())
     .filter(Boolean);
 
-app.use(cors(
-    {
-        origin: allowedOrigins,
+const isAllowedOrigin = (req, origin = req.get("origin")) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    try {
+        return new URL(origin).host === req.get("host");
+    } catch {
+        return false;
+    }
+};
+
+app.use(cors((req, callback) => {
+    const origin = req.get("origin");
+    const allowed = isAllowedOrigin(req, origin);
+    callback(null, {
+        origin: allowed ? (origin || false) : false,
         methods: ["POST", "GET", "PUT", "DELETE"],
         exposedHeaders: ["X-Moderation-Category", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset"],
         credentials: true
-    }
-));
+    });
+}));
 
 app.use((req, res, next) => {
     const origin = req.get("origin");
     const isMutation = !["GET", "HEAD", "OPTIONS"].includes(req.method);
-    if (isMutation && origin && !allowedOrigins.includes(origin)) {
+    if (isMutation && !isAllowedOrigin(req, origin)) {
         return res.status(403).json({ message: "Origin is not allowed" });
     }
     next();
@@ -87,19 +99,6 @@ app.use('/api/unsplash', unsplashRoutes);
 app.use('/api/openai', openAIRoutes);
 app.use('/api/googlesheet', googleSheetRoutes);
 
-// -------------------------- DEPLOYMENT---------------------------
-const __dirname1 = path.resolve(__dirname, "..");
-if(process.env.NODE_ENV === "production"){
-    app.use(express.static(path.join(__dirname1, "/frontend/dist")));
-    app.get('/{*splat}',(req, res)=>{
-        res.sendFile(path.resolve(__dirname1, "frontend", "dist", "index.html"))
-    })
-}else{
-    app.get("/", (req, res) => {
-        res.send("API is running successfully");
-    });    
-}
-// -------------------------- DEPLOYMENT---------------------------
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
     api_key: process.env.API_KEY,
@@ -127,6 +126,16 @@ app.post('/api/upload', protect, rateLimit({ windowMs: 60 * 60 * 1000, max: 30 }
     } finally {
         await fs.unlink(req.file.path).catch(() => {});
     }
+});
+
+// Serve the built SPA whenever it exists. This keeps client-side routes such
+// as /chats refreshable even when the hosting platform does not set NODE_ENV.
+const frontendDist = path.resolve(__dirname, "../frontend/dist");
+app.use(express.static(frontendDist));
+app.get('/{*splat}', (req, res, next) => {
+    res.sendFile(path.join(frontendDist, "index.html"), error => {
+        if (error) next();
+    });
 });
 
 app.use(notFound);
