@@ -42,7 +42,7 @@ const ChngeWallpaper = ({ setChangeWallpaperDisplay, setWallPaper, chatId }) => 
         '#98FB98', '#FFEFD5', '#F0E68C', '#DDA0DD', '#D3D3D3', '#CD5C5C',
     ];
 
-    const { user, chats } = ChatState();
+    const { user, setChats } = ChatState();
     const toast = useToast();
 
     const changeWallpaper = async (wallpaperUrl) => {
@@ -82,17 +82,25 @@ const ChngeWallpaper = ({ setChangeWallpaperDisplay, setWallPaper, chatId }) => 
                 position: "bottom",
             });
             setWallPaper(wallpaperUrl);
-            const chatIndex = chats.findIndex(
-                chat => chat._id === chatId
-            );
-            const wallPaperIndex = chats[chatIndex].wallPaper.findIndex(
-                wallPaper => wallPaper.userId === user._id 
-            );
-            chats[chatIndex].wallPaper[wallPaperIndex].wallpaperUrl = wallpaperUrl;
+            setChats(currentChats => currentChats.map(chat => {
+                if (!allChats && chat._id !== chatId) return chat;
+                const existingWallpapers = Array.isArray(chat.wallPaper) ? chat.wallPaper : [];
+                const hasUserWallpaper = existingWallpapers.some(
+                    wallpaper => String(wallpaper.userId) === String(user._id)
+                );
+                const wallPaper = hasUserWallpaper
+                    ? existingWallpapers.map(wallpaper =>
+                        String(wallpaper.userId) === String(user._id)
+                            ? { ...wallpaper, wallpaperUrl }
+                            : wallpaper
+                    )
+                    : [...existingWallpapers, { userId: user._id, wallpaperUrl }];
+                return { ...chat, wallPaper };
+            }));
         } catch (error) {
             toast({
                 title: 'Error Occured!',
-                description: error.response.data.message,
+                description: error.response?.data?.message || 'Failed to update wallpaper',
                 status: 'error',
                 duration: 5000,
                 isClosable: true,

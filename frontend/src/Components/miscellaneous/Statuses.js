@@ -188,6 +188,9 @@ const Statuses = (props) => {
                         <Stack spacing={3}>
                             {text === "" ? (
                                 <Box
+                                    as="button"
+                                    type="button"
+                                    aria-label="Add status"
                                     display="flex"
                                     onClick={onOpen}
                                 >

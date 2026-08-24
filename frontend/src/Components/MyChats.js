@@ -231,7 +231,7 @@ const MyChats = ({ fetchAgain }) => {
                 <Modal isOpen={isOpen} onClose={reject}>
                     <ModalOverlay />
                     <ModalContent>
-                        <ModalHeader>Modal Title</ModalHeader>
+                        <ModalHeader>Game Invitation</ModalHeader>
                         <ModalCloseButton />
                         <ModalBody>
                             {statement}

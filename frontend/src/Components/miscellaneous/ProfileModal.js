@@ -76,6 +76,7 @@ const ProfileModal = (props) => {
                 <span onClick={onOpen}>{props.children}</span>
             ) : (
                 <IconButton
+                    aria-label="View profile"
                     display={{ base: 'flex' }}
                     icon={<ViewIcon />}
                     onClick={onOpen}

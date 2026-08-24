@@ -181,6 +181,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
   return (
     <>
       <IconButton
+        aria-label="Group details"
         display={{ base: 'flex' }}
         icon={<ViewIcon />}
         onClick={onOpen}

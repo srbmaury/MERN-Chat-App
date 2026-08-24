@@ -202,7 +202,12 @@ io.on("connection", (socket) => {
     });
 
     socket.on('play request', async (chat, u) => {
-        await emitToOtherMembers(chat, 'received play request', chat, { _id: socket.userId, name: socket.userName });
+        const authorized = await authorizedChat(chat);
+        if (!authorized) return;
+        const fullChat = await Chat.findById(authorized._id)
+            .populate("users", "-password")
+            .populate("groupAdmin", "-password");
+        await emitToOtherMembers(authorized, 'received play request', fullChat, { _id: socket.userId, name: socket.userName });
     });
 
     socket.on('player did not respond', async (chat) => {

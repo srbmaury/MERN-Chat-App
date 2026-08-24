@@ -152,6 +152,10 @@ function SideDrawer() {
 
                 <Box>
                     {user && !user.isAdmin && <Box
+                        as="button"
+                        type="button"
+                        aria-label="Open statuses"
+                        title="Statuses"
                         marginBottom={-8}
                         marginLeft={-10}
                         boxSize={8}
@@ -165,7 +169,7 @@ function SideDrawer() {
                         <Statuses isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} handleCloseModal={handleCloseModal} />
                     </Box>}
                     <Menu>
-                        {user && !user.isAdmin && <MenuButton padding={1}>
+                        {user && !user.isAdmin && <MenuButton padding={1} aria-label="Notifications" title="Notifications">
                             <NotificationBadge
                                 count={notification.length}
                                 effect={Effect.SCALE}

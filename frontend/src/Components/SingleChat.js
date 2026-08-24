@@ -27,7 +27,7 @@ import {
     useMediaQuery,
     useToast,
 } from '@chakra-ui/react';
-import { ArrowBackIcon } from '@chakra-ui/icons';
+import { ArrowBackIcon, SettingsIcon } from '@chakra-ui/icons';
 import { getSender, getSenderFull } from '../config/ChatLogics';
 import ProfileModal from './miscellaneous/ProfileModal';
 import UpdateGroupChatModal from './miscellaneous/UpdateGroupChatModal';
@@ -113,7 +113,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         fetchMessages();
         selectedChatCompare = selectedChat;
         if (selectedChat) {
-            selectedChat.wallPaper.forEach(w => {
+            (selectedChat.wallPaper || []).forEach(w => {
                 if (w.userId === user._id) {
                     setWallPaper(w.wallpaperUrl);
                     return;
@@ -282,9 +282,16 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         alignItems="center"
                     >
                         <IconButton
+                            aria-label="Back to chats"
                             display={{ base: 'flex', md: 'none' }}
                             icon={<ArrowBackIcon />}
                             onClick={() => setSelectedChat('')}
+                        />
+                        <IconButton
+                            aria-label="Change wallpaper"
+                            title="Change wallpaper"
+                            icon={<SettingsIcon />}
+                            onClick={() => setChangeWallpaperDisplay(true)}
                         />
                         {!selectedChat.isGroupChat ? (
                             <>
