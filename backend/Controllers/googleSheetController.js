@@ -55,8 +55,14 @@ const saveToSheet = asyncHandler(async (req, res) => {
         console.log('Data inserted successfully!');
         res.status(200).json({ message: 'Data inserted successfully!' });
     } catch (err) {
-        console.error('Error inserting data:', err);
-        res.status(500).json({ error: 'An error occurred while inserting data.' });
+        const googleError = err.response?.data?.error_description || err.message;
+        console.error(`Google Sheets export failed: ${googleError}`);
+        const authenticationFailed = err.response?.data?.error === 'invalid_grant';
+        res.status(authenticationFailed ? 503 : 500).json({
+            error: authenticationFailed
+                ? 'Google Sheets service account is invalid or no longer exists.'
+                : 'An error occurred while inserting data.'
+        });
     }
 });
 

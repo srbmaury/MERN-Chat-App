@@ -263,6 +263,7 @@ const fetchSubmitForReview = asyncHandler(async (req, res) => {
         const usersWithSubmitForReview = [];
 
         users.forEach((user) => {
+            if (!user.submittedForReview?.length) return;
             usersWithSubmitForReview.push({
                 _id: user._id,
                 name: user.name,
