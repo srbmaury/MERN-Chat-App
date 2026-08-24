@@ -7,7 +7,7 @@
         "start": "node backend/server.js",
         "server": "nodemon backend/server.js",
         "test": "node --test backend/tests/*.test.js",
-        "build": "npm ci --legacy-peer-deps --prefix frontend && npm run build --prefix frontend"
+        "build": "npm ci --include=dev --legacy-peer-deps --prefix frontend && npm run build --prefix frontend"
     },
     "engines": {
         "node": ">=22 <23"
