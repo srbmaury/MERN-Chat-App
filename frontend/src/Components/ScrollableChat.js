@@ -1,5 +1,5 @@
-import { Avatar, Box, Image, MenuDivider, MenuItem, MenuList, Text, Tooltip, useToast } from '@chakra-ui/react'
-import React, { useState, useEffect } from 'react'
+import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Avatar, Box, Button, Image, MenuDivider, MenuItem, MenuList, Text, Tooltip, useToast } from '@chakra-ui/react'
+import React, { useState, useEffect, useRef } from 'react'
 import ScrollableFeed from 'react-scrollable-feed'
 import { formatDate, formatTime, isFirstMessageofDay, isLastMessage, isSameSender, isSameSenderMargin } from '../config/ChatLogics'
 import { ChatState } from '../Context/ChatProvider'
@@ -12,8 +12,11 @@ import '../App.css'
 var socket;
 
 const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToReply, inputRef }) => {
-    const { user, selectedChat, setChats } = ChatState();
+    const { user, selectedChat, setChats, setNewLatestMessage } = ChatState();
     const [forwardMessageId, setForwardMessageId] = useState(null);
+    const [messageToDelete, setMessageToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const cancelDeleteRef = useRef();
     const toast = useToast();
 
     useEffect(() => {
@@ -23,6 +26,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
 
     const deleteMessage = async (message) => {
         const messageId = message._id;
+        setIsDeleting(true);
         try {
             const config = {
                 headers: {
@@ -30,13 +34,20 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                     Authorization: `Bearer ${user.token}`,
                 },
             };
-            const { data } = await axios.delete(`/api/message/${messageId}`, config);
+            await axios.delete(`/api/message/${messageId}`, config);
             setMessages(messages.filter(m => m._id !== messageId));
-            if (data.chat) {
-                setChats(currentChats => currentChats.map(chat =>
-                    chat._id === data.chat._id ? data.chat : chat
-                ));
-            }
+            const { data: updatedChats } = await axios.get('/api/chat', config);
+            setChats(updatedChats);
+            const updatedChat = updatedChats.find(chat => chat._id === selectedChat._id);
+            setNewLatestMessage(updatedChat?.latestMessage || null);
+            setMessageToDelete(null);
+            toast({
+                title: 'Message deleted',
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+                position: 'bottom',
+            });
         } catch (error) {
             toast({
                 title: 'Error Occured!',
@@ -46,6 +57,8 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                 isClosable: true,
                 position: 'bottom',
             });
+        } finally {
+            setIsDeleting(false);
         }
     }
 
@@ -109,6 +122,7 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
         }
     }
     return (
+        <>
         <ScrollableFeed>
             <>
                 {selectedChat.isGroupChat &&
@@ -194,13 +208,8 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                                                 Forward
                                             </MenuItem>
                                             {m.sender._id === user._id && <span><MenuDivider />
-                                                <MenuItem>
-                                                    <div
-                                                        id={`d${m._id}`}
-                                                        onClick={() => deleteMessage(m)}
-                                                    >
-                                                        Delete
-                                                    </div>
+                                                <MenuItem onClick={() => setMessageToDelete(m)}>
+                                                    Delete
                                                 </MenuItem>
                                             </span>}
                                         </MenuList>
@@ -265,7 +274,36 @@ const ScrollableChat = ({ messages, setMessages, setNewMessage, setMessageToRepl
                 ))
                 }
             </>
-        </ScrollableFeed >
+        </ScrollableFeed>
+        <AlertDialog
+            isOpen={Boolean(messageToDelete)}
+            leastDestructiveRef={cancelDeleteRef}
+            onClose={() => !isDeleting && setMessageToDelete(null)}
+            isCentered
+        >
+            <AlertDialogOverlay>
+                <AlertDialogContent>
+                    <AlertDialogHeader>Delete message?</AlertDialogHeader>
+                    <AlertDialogBody>
+                        This message will be permanently deleted for everyone in this chat.
+                    </AlertDialogBody>
+                    <AlertDialogFooter>
+                        <Button ref={cancelDeleteRef} onClick={() => setMessageToDelete(null)} disabled={isDeleting}>
+                            Cancel
+                        </Button>
+                        <Button
+                            colorScheme="red"
+                            onClick={() => deleteMessage(messageToDelete)}
+                            isLoading={isDeleting}
+                            ml={3}
+                        >
+                            Delete
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialogOverlay>
+        </AlertDialog>
+        </>
     )
 }
 
