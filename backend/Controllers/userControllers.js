@@ -228,6 +228,7 @@ const submitForReview = asyncHandler(async (req, res) => {
     if (typeof foulMessage !== "string" || !foulMessage.trim() || foulMessage.length > 10_000) {
         return res.status(400).json({ message: "A valid message is required" });
     }
+    const normalizedFoulMessage = foulMessage.trim();
     try {
         const user = await User.findById(req.user._id);
 
@@ -235,7 +236,9 @@ const submitForReview = asyncHandler(async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        if (!user.submittedForReview.includes(foulMessage)) user.submittedForReview.push(foulMessage);
+        if (!user.submittedForReview.includes(normalizedFoulMessage)) {
+            user.submittedForReview.push(normalizedFoulMessage);
+        }
 
         await user.save();
 

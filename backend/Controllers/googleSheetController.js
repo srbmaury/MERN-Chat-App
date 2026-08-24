@@ -34,10 +34,10 @@ const saveToSheet = asyncHandler(async (req, res) => {
         });
 
         const currentData = response.data.values || [];
-        const lastRow = currentData.length + 1;
+        const firstAppendRow = currentData.length + 1;
 
         // Increment the serial number for each row in dataToInsert
-        let serialNumber = lastRow;
+        let serialNumber = currentData.length;
         const modifiedDataToInsert = dataToInsert.map(item => {
             serialNumber++;
             return [serialNumber, '', '', '', '', item.category, item.message];
@@ -46,7 +46,7 @@ const saveToSheet = asyncHandler(async (req, res) => {
         // Append the modified dataToInsert array to the Google Sheets
         await sheets.spreadsheets.values.append({
             spreadsheetId,
-            range: 'labeled_data!A' + lastRow + ':G', // Range for columns A to G
+            range: 'labeled_data!A' + firstAppendRow + ':G', // Range for columns A to G
             valueInputOption: 'RAW',
             resource: { values: modifiedDataToInsert },
         });
