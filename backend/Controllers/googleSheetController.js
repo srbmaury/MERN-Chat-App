@@ -8,12 +8,11 @@ const createClient = () => {
         error.statusCode = 503;
         throw error;
     }
-    return new google.auth.JWT(
-        process.env.CLIENT_EMAIL,
-        null,
-        process.env.PRIVATE_KEY.replace(/\\n/g, '\n'),
-        ['https://www.googleapis.com/auth/spreadsheets']
-    );
+    return new google.auth.JWT({
+        email: process.env.CLIENT_EMAIL,
+        key: process.env.PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
 };
 
 const saveToSheet = asyncHandler(async (req, res) => {
