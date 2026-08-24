@@ -11,6 +11,8 @@ import {
     Checkbox,
     useToast,
     CircularProgress,
+    Button,
+    ButtonGroup,
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import SideDrawer from '../Components/miscellaneous/SideDrawer';
@@ -66,7 +68,7 @@ const AdminPage = () => {
         );
 
         if (existingIndex !== -1) {
-            setTmpArray(prevArray => {
+                setTmpArray(prevArray => {
                 const newArray = [...prevArray];
                 newArray[existingIndex] = {
                     userId,
@@ -74,7 +76,12 @@ const AdminPage = () => {
                     category
                 };
                 return newArray;
-            });
+                });
+            setMessageValueArray(prevArray => prevArray.map(item =>
+                item.userId === userId && item.message === message
+                    ? { ...item, category }
+                    : item
+            ));
         } else {
             setTmpArray(prevArray => [
                 ...prevArray,
@@ -106,7 +113,6 @@ const AdminPage = () => {
                 duration: 3000,
                 isClosable: true,
             });
-            handleReview();
         } catch (error) {
             toast({
                 title: 'Error',
@@ -142,6 +148,17 @@ const AdminPage = () => {
                 duration: 3000,
                 isClosable: true,
             });
+            const reviewedKeys = new Set(tmpArray.map(item => `${item.userId}:${item.message}`));
+            setUserMessages(currentUsers => currentUsers
+                .map(currentUser => ({
+                    ...currentUser,
+                    submittedForReview: currentUser.submittedForReview.filter(message =>
+                        !reviewedKeys.has(`${currentUser._id}:${message.message}`)
+                    ),
+                }))
+                .filter(currentUser => currentUser.submittedForReview.length > 0));
+            setTmpArray([]);
+            setMessageValueArray([]);
         } catch (error) {
             toast({
                 title: 'Error',
@@ -154,22 +171,19 @@ const AdminPage = () => {
     };
 
     const handleFourthCheckboxChange = (userId, message) => {
-        const existingIndex = tmpArray.findIndex(
+        const selectedReview = tmpArray.find(
             item => item.userId === userId && item.message === message
         );
 
-        if (existingIndex !== -1) {
-            const isPresent = messageValueArray.findIndex(
-                item => item.message === message
-            );
-            if (isPresent !== -1)
-                messageValueArray[isPresent].category = tmpArray[existingIndex].category;
-            else {
-                setMessageValueArray(prevArray => [
-                    ...prevArray,
-                    { message: message, category: tmpArray[existingIndex].category }
-                ]);
-            }
+        if (selectedReview) {
+            setMessageValueArray(prevArray => {
+                const exists = prevArray.some(item =>
+                    item.userId === userId && item.message === message
+                );
+                return exists
+                    ? prevArray.filter(item => !(item.userId === userId && item.message === message))
+                    : [...prevArray, { userId, message, category: selectedReview.category }];
+            });
         } else {
             toast({
                 title: 'Error',
@@ -191,10 +205,26 @@ const AdminPage = () => {
                         <Box ml={2}>Saving data...</Box>
                     </Box>
                 )}
+                <ButtonGroup mt={4}>
+                    <Button
+                        colorScheme="blue"
+                        onClick={handleReview}
+                        isDisabled={tmpArray.length === 0 || isLoading}
+                    >
+                        Complete review
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={handleSaveToSheet}
+                        isDisabled={messageValueArray.length === 0 || isLoading}
+                    >
+                        Export selected to Google Sheets
+                    </Button>
+                </ButtonGroup>
             </Box>
             <TableContainer>
                 <Table variant="simple">
-                    <TableCaption cursor="pointer" onClick={handleSaveToSheet}>Save</TableCaption>
+                    <TableCaption>Messages submitted for review</TableCaption>
                     <Thead>
                         <Tr>
                             <Th>User</Th>
@@ -213,6 +243,7 @@ const AdminPage = () => {
                                     <Td>{message.message}</Td>
                                     <Td>
                                         <Checkbox
+                                            aria-label={`Mark ${message.message} as hateful`}
                                             isChecked={tmpArray.some(
                                                 item => item.userId === user._id && item.message === message.message && item.category === 0
                                             )}
@@ -221,6 +252,7 @@ const AdminPage = () => {
                                     </Td>
                                     <Td>
                                         <Checkbox
+                                            aria-label={`Mark ${message.message} as offensive`}
                                             isChecked={tmpArray.some(
                                                 item => item.userId === user._id && item.message === message.message && item.category === 1
                                             )}
@@ -229,6 +261,7 @@ const AdminPage = () => {
                                     </Td>
                                     <Td>
                                         <Checkbox
+                                            aria-label={`Mark ${message.message} as neither`}
                                             isChecked={tmpArray.some(
                                                 item => item.userId === user._id && item.message === message.message && item.category === 2
                                             )}
@@ -237,12 +270,10 @@ const AdminPage = () => {
                                     </Td>
                                     <Td>
                                         <Checkbox
-                                            isChecked={messageValueArray.findIndex(
-                                                item => item.message === message.message
-                                            ) !== -1}
-                                            disabled={messageValueArray.findIndex(
-                                                item => item.message === message.message
-                                            ) !== -1}
+                                            aria-label={`Export ${message.message} to Google Sheets`}
+                                            isChecked={messageValueArray.some(
+                                                item => item.userId === user._id && item.message === message.message
+                                            )}
                                             onChange={() => handleFourthCheckboxChange(user._id, message.message)}
                                         />
                                     </Td>
