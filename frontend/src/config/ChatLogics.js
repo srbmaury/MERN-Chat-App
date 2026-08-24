@@ -1,11 +1,10 @@
 export const getSender = (loggedUser, users) => {
-    if (loggedUser && users)
-        return users[0]._id === loggedUser._id ? users[1].name : users[0].name;
+    return getSenderFull(loggedUser, users)?.name || "Deleted user";
 };
 
 export const getSenderFull = (loggedUser, users) => {
-    if (loggedUser && users)
-        return users[0]._id === loggedUser._id ? users[1] : users[0];
+    if (!loggedUser || !Array.isArray(users)) return undefined;
+    return users.find(user => user && user._id !== loggedUser._id);
 };
 
 export const isSameSender = (messages, m, i, userId) => {

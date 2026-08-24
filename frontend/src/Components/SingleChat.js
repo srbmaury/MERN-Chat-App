@@ -294,7 +294,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                                         <Text as="span" ml={2} fontSize="xs" color="teal.500">AI</Text>
                                     )}
                                 </Box>
-                                <ProfileModal user={getSenderFull(user, selectedChat.users)} />
+                                {getSenderFull(user, selectedChat.users) && (
+                                    <ProfileModal user={getSenderFull(user, selectedChat.users)} />
+                                )}
                             </>
                         ) : (
                             <>

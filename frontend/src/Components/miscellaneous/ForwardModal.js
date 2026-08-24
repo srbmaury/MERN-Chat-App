@@ -83,7 +83,7 @@ const ForwardModal = ({ children, content, media, messages, setMessages, forward
                                     size="sm"
                                     cursor="pointer"
                                     name={getSender(user, c.users, c)}
-                                    src={c.isGroupChat ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDZqg5vL6300Pfadt6T_PhpiYSXEn8gosMY-eE7k0FJczKzLA&s' : getSenderFull(user, c.users, c).pic}
+                                    src={c.isGroupChat ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDZqg5vL6300Pfadt6T_PhpiYSXEn8gosMY-eE7k0FJczKzLA&s' : getSenderFull(user, c.users, c)?.pic}
                                 />
                                 {c.isGroupChat ? c.chatName : getSender(user, c.users)}
                             </div>

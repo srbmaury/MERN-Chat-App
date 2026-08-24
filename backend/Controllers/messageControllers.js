@@ -4,19 +4,7 @@ const Message = require('../models/messageModel');
 const User = require("../models/userModel");
 const { encryptMessage, decryptMessage } = require("../utils/messageCrypto");
 const { replyAsAssistant } = require("../services/aiAssistantService");
-
-const moderateContent = async (content) => {
-    if (!content || !process.env.MODERATION_API_URL) return "Neither";
-    const response = await fetch(`${process.env.MODERATION_API_URL.replace(/\/$/, "")}/api/predict`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: content }),
-        signal: AbortSignal.timeout(3000),
-    });
-    if (!response.ok) throw new Error("Moderation service rejected the request");
-    const data = await response.json();
-    return ["Offensive", "Hateful", "Neither"].includes(data.prediction) ? data.prediction : "Neither";
-};
+const { moderateContent } = require("../services/moderationService");
 
 const sendMessage = asyncHandler(async (req, res) => {
     const { content, media, chatId, messageId } = req.body;

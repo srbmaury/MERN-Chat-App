@@ -74,6 +74,12 @@ Flagged messages increment the sender's foul count; an account is blocked at
 can process reviews. Google Sheets export is available when its credentials are
 configured.
 
+The moderation service is a separate application and must be running before
+moderation can occur. For local Flask development, use
+`MODERATION_API_URL=http://127.0.0.1:8000`. The maintained deployment is
+`https://offensive-content-api.onrender.com`. If it is unavailable, messaging
+continues and the message is categorized as `Neither`.
+
 ![Moderation review](https://res.cloudinary.com/dnimsxcmh/image/upload/v1690957402/uploads/14e4073b8bcd78583decbee941faa3dd_ggbbag.png)
 
 ### Tic-Tac-Toe
